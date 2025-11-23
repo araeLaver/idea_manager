@@ -8,7 +8,24 @@ const router = Router();
 router.use(authMiddleware);
 
 // Helper function to map database row to idea object
-const mapRowToIdea = (row: any) => ({
+interface DbRow {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  status: string;
+  priority: string;
+  notes: string;
+  target_market: string;
+  potential_revenue: string;
+  resources: string;
+  timeline: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const mapRowToIdea = (row: DbRow) => ({
   id: row.id,
   title: row.title,
   description: row.description,
@@ -41,7 +58,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     const sortDirection = (sortOrder as string)?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
     let whereClause = 'WHERE user_id = $1';
-    const params: any[] = [req.userId];
+    const params: unknown[] = [req.userId];
     let paramIndex = 2;
 
     if (status) {
@@ -359,8 +376,8 @@ router.get('/stats/summary', async (req: AuthRequest, res: Response) => {
       archived: parseInt(stats.archived),
       highPriority: parseInt(stats.high_priority),
       completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
-      topCategories: top_categories.map((r: any) => ({ category: r.category, count: parseInt(r.count) })),
-      topTags: top_tags.map((r: any) => ({ tag: r.tag, count: parseInt(r.count) }))
+      topCategories: top_categories.map((r: { category: string; count: string }) => ({ category: r.category, count: parseInt(r.count) })),
+      topTags: top_tags.map((r: { tag: string; count: string }) => ({ tag: r.tag, count: parseInt(r.count) }))
     });
   } catch (error) {
     console.error('Get stats error:', error);
