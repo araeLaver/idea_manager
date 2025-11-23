@@ -370,10 +370,3 @@ npm run test:coverage # Coverage report
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for Koyeb.
 
-## License
-
-MIT License
-
-## Contact
-
-Project Link: [https://github.com/araeLaver/idea_manager](https://github.com/araeLaver/idea_manager)
