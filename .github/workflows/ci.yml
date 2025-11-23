@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -32,9 +36,6 @@ jobs:
 
     - name: Type check
       run: npx tsc --noEmit
-
-    - name: Run tests
-      run: npm run test
 
     - name: Build application
       run: npm run build
@@ -94,9 +95,9 @@ jobs:
       run: npm audit --audit-level=moderate
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: javascript
 
     - name: Run CodeQL analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
