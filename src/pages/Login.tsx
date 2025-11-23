@@ -33,52 +33,40 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YTQgNCAwIDEgMSAwIDggNCA0IDAgMCAxIDAtOHptLTggMGE0IDQgMCAxIDEgMCA4IDQgNCAwIDAgMSAwLTh6bS04IDBhNCA0IDAgMSAxIDAgOCA0IDQgMCAwIDEgMC04em0tOCAwYTQgNCAwIDEgMSAwIDggNCA0IDAgMCAxIDAtOHptLTggMGE0IDQgMCAxIDEgMCA4IDQgNCAwIDAgMSAwLTh6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
-      </div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* Header with glassmorphism */}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-3xl blur-2xl opacity-75 group-hover:opacity-100 transition duration-300"></div>
-              <div className="relative p-5 bg-white/20 backdrop-blur-md rounded-3xl border border-white/30 shadow-2xl">
-                <Lightbulb className="h-12 w-12 text-white drop-shadow-lg" />
-              </div>
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-indigo-600 rounded-lg">
+              <Lightbulb className="h-10 w-10 text-white" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-3 text-white drop-shadow-lg">
-            Welcome Back
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            아이디어 매니저
           </h1>
-          <p className="text-base text-white/90">
-            Sign in to manage your creative ideas
+          <p className="text-gray-600">
+            아이디어를 체계적으로 관리하세요
           </p>
         </div>
 
-        {/* Glassmorphism form container */}
-        <div className="bg-white/10 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-white/20">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* Form Container */}
+        <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
+          <form className="space-y-5" onSubmit={handleSubmit}>
             {error && (
-              <div className="px-4 py-3.5 rounded-xl text-sm font-medium bg-red-500/20 border border-red-400/30 text-white backdrop-blur-sm flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-300"></div>
+              <div className="px-4 py-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
                 {error}
               </div>
             )}
 
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-bold mb-2.5 text-white">
-                Email
+              <label htmlFor="email" className="block text-sm font-semibold mb-2 text-gray-700">
+                이메일
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-white/60" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="email"
@@ -88,8 +76,8 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full px-4 py-4 pl-12 bg-white/10 border-2 border-white/20 rounded-xl text-base text-white placeholder-white/50
-                           focus:outline-none focus:border-white/40 focus:bg-white/15 focus:ring-4 focus:ring-white/10 transition-all backdrop-blur-sm"
+                  className="block w-full pl-10 pr-3 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500
+                           focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
                   placeholder="your@email.com"
                 />
               </div>
@@ -97,12 +85,12 @@ export default function Login() {
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-bold mb-2.5 text-white">
-                Password
+              <label htmlFor="password" className="block text-sm font-semibold mb-2 text-gray-700">
+                비밀번호
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-white/60" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="password"
@@ -112,65 +100,64 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-4 py-4 pl-12 bg-white/10 border-2 border-white/20 rounded-xl text-base text-white placeholder-white/50
-                           focus:outline-none focus:border-white/40 focus:bg-white/15 focus:ring-4 focus:ring-white/10 transition-all backdrop-blur-sm"
+                  className="block w-full pl-10 pr-3 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500
+                           focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="pt-4">
-              <Button
+            <div className="pt-2">
+              <button
                 type="submit"
-                variant="glass"
-                size="lg"
-                fullWidth
                 disabled={loading}
+                className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg
+                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                         disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Button>
+                {loading ? '로그인 중...' : '로그인'}
+              </button>
             </div>
           </form>
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-white/80">
-              Don't have an account?{' '}
+            <p className="text-sm text-gray-600">
+              계정이 없으신가요?{' '}
               <Link
                 to="/register"
-                className="font-bold text-white hover:text-white/90 hover:underline transition-colors"
+                className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
               >
-                Sign Up
+                회원가입
               </Link>
             </p>
           </div>
 
           {/* Divider */}
-          <div className="relative my-8">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/20"></div>
+              <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-xs font-medium text-white/90">
-                or
+              <span className="px-3 bg-white text-gray-500">
+                또는
               </span>
             </div>
           </div>
 
           {/* Guest Mode Button */}
           <div>
-            <Button
+            <button
               type="button"
-              variant="glass"
-              size="md"
-              fullWidth
               onClick={handleGuestMode}
+              className="w-full py-3 px-4 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg
+                       hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
             >
-              Continue as Guest
-            </Button>
-            <p className="mt-3 text-xs text-center text-white/70">
-              Try it out without logging in. Your data stays in your browser.
+              게스트로 둘러보기
+            </button>
+            <p className="mt-2 text-xs text-center text-gray-500">
+              로그인 없이 바로 사용해보세요
             </p>
           </div>
         </div>
