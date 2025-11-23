@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Lightbulb, Mail, Lock, Sparkles } from 'lucide-react';
+import { Lightbulb, Mail, Lock } from 'lucide-react';
 import { Button } from '../components/Button';
 
 export default function Login() {
@@ -65,20 +65,20 @@ export default function Login() {
         <div className="bg-white/10 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-white/20">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="px-4 py-3.5 rounded-xl text-sm font-medium bg-red-50 border border-red-200 text-red-600 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+              <div className="px-4 py-3.5 rounded-xl text-sm font-medium bg-red-500/20 border border-red-400/30 text-white backdrop-blur-sm flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-300"></div>
                 {error}
               </div>
             )}
 
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-bold mb-2.5 text-gray-800">
-                이메일
+              <label htmlFor="email" className="block text-sm font-bold mb-2.5 text-white">
+                Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-white/60" />
                 </div>
                 <input
                   id="email"
@@ -88,8 +88,8 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full px-4 py-4 pl-12 bg-gray-50 border-2 border-gray-200 rounded-xl text-base text-gray-900 placeholder-gray-400
-                           focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all"
+                  className="block w-full px-4 py-4 pl-12 bg-white/10 border-2 border-white/20 rounded-xl text-base text-white placeholder-white/50
+                           focus:outline-none focus:border-white/40 focus:bg-white/15 focus:ring-4 focus:ring-white/10 transition-all backdrop-blur-sm"
                   placeholder="your@email.com"
                 />
               </div>
@@ -97,12 +97,12 @@ export default function Login() {
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-bold mb-2.5 text-gray-800">
-                비밀번호
+              <label htmlFor="password" className="block text-sm font-bold mb-2.5 text-white">
+                Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-white/60" />
                 </div>
                 <input
                   id="password"
@@ -112,8 +112,8 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-4 py-4 pl-12 bg-gray-50 border-2 border-gray-200 rounded-xl text-base text-gray-900 placeholder-gray-400
-                           focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all"
+                  className="block w-full px-4 py-4 pl-12 bg-white/10 border-2 border-white/20 rounded-xl text-base text-white placeholder-white/50
+                           focus:outline-none focus:border-white/40 focus:bg-white/15 focus:ring-4 focus:ring-white/10 transition-all backdrop-blur-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -123,25 +123,25 @@ export default function Login() {
             <div className="pt-4">
               <Button
                 type="submit"
-                variant="secondary"
+                variant="glass"
                 size="lg"
                 fullWidth
                 disabled={loading}
               >
-                {loading ? '로그인 중...' : '로그인'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
             </div>
           </form>
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              계정이 없으신가요?{' '}
+            <p className="text-sm text-white/80">
+              Don't have an account?{' '}
               <Link
                 to="/register"
-                className="font-bold text-purple-600 hover:text-purple-700 hover:underline transition-colors"
+                className="font-bold text-white hover:text-white/90 hover:underline transition-colors"
               >
-                회원가입
+                Sign Up
               </Link>
             </p>
           </div>
@@ -149,11 +149,11 @@ export default function Login() {
           {/* Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-white/20"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-xs font-medium text-gray-500">
-                또는
+              <span className="px-4 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-xs font-medium text-white/90">
+                or
               </span>
             </div>
           </div>
@@ -162,15 +162,15 @@ export default function Login() {
           <div>
             <Button
               type="button"
-              variant="ghost"
+              variant="glass"
               size="md"
               fullWidth
               onClick={handleGuestMode}
             >
-              먼저 둘러보기 (게스트 모드)
+              Continue as Guest
             </Button>
-            <p className="mt-3 text-xs text-center text-gray-500">
-              로그인 없이 바로 사용해보세요. 데이터는 브라우저에만 저장됩니다.
+            <p className="mt-3 text-xs text-center text-white/70">
+              Try it out without logging in. Your data stays in your browser.
             </p>
           </div>
         </div>
