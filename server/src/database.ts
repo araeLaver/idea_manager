@@ -37,7 +37,7 @@ const pool = new Pool({
   connectionTimeoutMillis: parseInt(process.env.DATABASE_CONNECTION_TIMEOUT || '2000'),
 });
 
-export const query = (text: string, params?: any[]) => pool.query(text, params);
+export const query = (text: string, params?: unknown[]) => pool.query(text, params);
 
 export const initDatabase = async () => {
   try {

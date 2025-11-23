@@ -12,7 +12,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     const { month, year } = req.query;
 
     let sql = 'SELECT * FROM idea_manager.daily_memos WHERE user_id = $1';
-    const params: any[] = [req.userId];
+    const params: unknown[] = [req.userId];
 
     if (month && year) {
       sql += ' AND EXTRACT(MONTH FROM date) = $2 AND EXTRACT(YEAR FROM date) = $3';

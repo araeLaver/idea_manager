@@ -99,7 +99,7 @@ app.get('/api/health', async (req, res) => {
       database: 'connected',
       version: process.env.npm_package_version || '1.0.0'
     });
-  } catch (error) {
+  } catch {
     res.status(503).json({
       status: 'error',
       timestamp: new Date().toISOString(),
@@ -130,7 +130,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response) => {
   console.error('Error:', err.message);
   if (process.env.NODE_ENV !== 'production') {
     console.error(err.stack);

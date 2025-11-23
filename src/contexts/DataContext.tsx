@@ -142,7 +142,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setIdeas([]);
       setStats(null);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshIdeas, refreshStats]);
 
   const value: DataContextType = {
     ideas,
