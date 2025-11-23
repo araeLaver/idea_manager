@@ -1,6 +1,6 @@
-# 아이디어 매니저 (Idea Manager)
+# Idea Manager
 
-창의적인 아이디어와 사업 구상을 체계적으로 관리할 수 있는 풀스택 웹 애플리케이션입니다.
+A full-stack web application for systematically managing creative ideas and business concepts.
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat&logo=typescript&logoColor=white)
@@ -8,80 +8,80 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat&logo=postgresql&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5-000000?style=flat&logo=express&logoColor=white)
 
-## 주요 기능
+## Features
 
-### 아이디어 관리
-- **CRUD 기능**: 아이디어 생성, 조회, 수정, 삭제
-- **상태 관리**: 초안, 진행중, 완료, 보관됨
-- **우선순위**: 높음, 보통, 낮음
-- **카테고리 분류**: 자유로운 카테고리 설정
-- **태그 시스템**: 다중 태그로 아이디어 분류
-- **히스토리 추적**: 모든 변경 이력 자동 기록
+### Idea Management
+- **CRUD Operations**: Create, read, update, and delete ideas
+- **Status Tracking**: Draft, In Progress, Completed, Archived
+- **Priority Levels**: High, Medium, Low
+- **Category Classification**: Flexible category assignment
+- **Tag System**: Multi-tag organization
+- **History Tracking**: Automatic change log for all modifications
 
-### 칸반 보드
-- **드래그&드롭**: 직관적인 상태 변경
-- **4개 컬럼**: 초안 → 진행중 → 완료 → 보관됨
-- **실시간 업데이트**: 드롭 시 즉시 상태 저장
+### Kanban Board
+- **Drag & Drop**: Intuitive status updates
+- **4 Columns**: Draft → In Progress → Completed → Archived
+- **Real-time Updates**: Instant state persistence
 
-### 대시보드
-- **통계 카드**: 총 아이디어, 완료율, 진행중, 높은 우선순위
-- **차트**: 상태별/우선순위별 분포 시각화
-- **최근 활동**: 최근 수정된 아이디어 목록
-- **인기 카테고리/태그**: 상위 사용 현황
+### Dashboard
+- **Statistics Cards**: Total ideas, completion rate, in-progress count, high priority items
+- **Charts**: Status and priority distribution visualization
+- **Recent Activity**: Recently modified ideas
+- **Popular Categories/Tags**: Top usage statistics
 
-### 일일 메모
-- **날짜별 메모**: 매일의 기록 관리
-- **빠른 접근**: 대시보드에서 오늘의 메모 입력
+### Daily Memos
+- **Date-based Notes**: Daily record management
+- **Quick Access**: Direct memo entry from dashboard
 
-### AI 기능
-- **카테고리 자동 분류**: 키워드 기반 자동 분류
-- **태그 자동 제안**: 내용 기반 태그 추천
-- **아이디어 개선 제안**: 완성도 향상 가이드
+### AI Features
+- **Auto-categorization**: Keyword-based category suggestions
+- **Tag Recommendations**: Content-based tag proposals
+- **Improvement Suggestions**: Enhancement guides for ideas
 
-### 사용자 인터페이스
-- **반응형 디자인**: 데스크톱, 태블릿, 모바일 지원
-- **다크 모드**: 라이트/다크 테마 전환
-- **키보드 단축키**: Ctrl+N (새 아이디어), Ctrl+K (검색) 등
-- **PWA 지원**: 오프라인 사용 및 앱 설치 가능
+### User Interface
+- **Responsive Design**: Desktop, tablet, and mobile support
+- **Dark Mode**: Light/dark theme toggle
+- **Keyboard Shortcuts**: Ctrl+N (new idea), Ctrl+K (search), and more
+- **PWA Support**: Offline usage and app installation
 
-## 기술 스택
+## Tech Stack
 
 ### Frontend
 - **React 19** + TypeScript 5.8
-- **Vite 7** - 빌드 도구
-- **React Router DOM 7** - 라우팅
-- **Recharts** - 차트 시각화
-- **@dnd-kit** - 드래그&드롭
-- **Lucide React** - 아이콘
-- **date-fns** - 날짜 처리
+- **Vite 7** - Build tool
+- **React Router DOM 7** - Routing
+- **Recharts** - Chart visualization
+- **@dnd-kit** - Drag and drop
+- **Lucide React** - Icons
+- **date-fns** - Date utilities
 
 ### Backend
-- **Express 5** - API 서버
-- **PostgreSQL** - 데이터베이스
-- **JWT** - 인증
-- **bcryptjs** - 비밀번호 암호화
+- **Express 5** - API server
+- **PostgreSQL** - Database
+- **JWT** - Authentication
+- **bcryptjs** - Password encryption
 
-## 시작하기
+## Getting Started
 
-### 필수 조건
+### Prerequisites
 - Node.js 18+
 - npm
-- PostgreSQL 데이터베이스
+- PostgreSQL database
 
-### 설치
+### Installation
 
 ```bash
-# 저장소 클론
-git clone https://github.com/araeLaver/idea-manager.git
-cd idea-manager
+# Clone repository
+git clone https://github.com/araeLaver/idea_manager.git
+cd idea_manager
 
-# 의존성 설치
+# Install dependencies
 npm install
 ```
 
-### 환경 변수 설정
+### Environment Variables
 
-`.env` 파일 생성:
+Create a `.env` file:
 
 ```env
 # Database Configuration
@@ -101,49 +101,49 @@ FRONTEND_URL=http://localhost:5173
 VITE_API_URL=http://localhost:3001/api
 ```
 
-### 실행
+### Development
 
 ```bash
-# 백엔드 서버만 실행
+# Backend server only
 npm run dev:server
 
-# 프론트엔드만 실행
+# Frontend only
 npm run dev
 
-# 동시 실행 (권장)
+# Run both (recommended)
 npm run dev:all
 ```
 
-### 빌드
+### Build
 
 ```bash
 npm run build
 ```
 
-## API 문서
+## API Documentation
 
-### 인증 API
+### Authentication API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| POST | `/api/auth/register` | 회원가입 |
-| POST | `/api/auth/login` | 로그인 |
-| GET | `/api/auth/me` | 현재 사용자 정보 |
-| PUT | `/api/auth/profile` | 프로필 수정 |
-| PUT | `/api/auth/password` | 비밀번호 변경 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | User registration |
+| POST | `/api/auth/login` | User login |
+| GET | `/api/auth/me` | Current user info |
+| PUT | `/api/auth/profile` | Update profile |
+| PUT | `/api/auth/password` | Change password |
 
-#### 회원가입
+#### Registration
 ```bash
 curl -X POST http://localhost:3001/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
     "password": "password123",
-    "name": "홍길동"
+    "name": "John Doe"
   }'
 ```
 
-#### 로그인
+#### Login
 ```bash
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
@@ -153,84 +153,84 @@ curl -X POST http://localhost:3001/api/auth/login \
   }'
 ```
 
-### 아이디어 API
+### Ideas API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| GET | `/api/ideas` | 목록 조회 (필터/검색) |
-| GET | `/api/ideas/:id` | 상세 조회 |
-| POST | `/api/ideas` | 생성 |
-| PUT | `/api/ideas/:id` | 수정 |
-| DELETE | `/api/ideas/:id` | 삭제 |
-| GET | `/api/ideas/stats/summary` | 통계 |
-| PATCH | `/api/ideas/bulk/status` | 일괄 상태 변경 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/ideas` | List ideas (filter/search) |
+| GET | `/api/ideas/:id` | Get idea details |
+| POST | `/api/ideas` | Create idea |
+| PUT | `/api/ideas/:id` | Update idea |
+| DELETE | `/api/ideas/:id` | Delete idea |
+| GET | `/api/ideas/stats/summary` | Get statistics |
+| PATCH | `/api/ideas/bulk/status` | Bulk status update |
 
-#### 아이디어 생성
+#### Create Idea
 ```bash
 curl -X POST http://localhost:3001/api/ideas \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
-    "title": "AI 기반 추천 시스템",
-    "description": "사용자 행동 기반 개인화 추천",
-    "category": "기술",
-    "tags": ["AI", "ML", "추천"],
+    "title": "AI-based Recommendation System",
+    "description": "Personalized recommendations based on user behavior",
+    "category": "Technology",
+    "tags": ["AI", "ML", "Recommendation"],
     "status": "draft",
     "priority": "high",
-    "targetMarket": "이커머스 플랫폼",
-    "potentialRevenue": "월 1000만원",
-    "resources": "ML 엔지니어 2명",
-    "timeline": "6개월"
+    "targetMarket": "E-commerce platforms",
+    "potentialRevenue": "$10,000/month",
+    "resources": "2 ML Engineers",
+    "timeline": "6 months"
   }'
 ```
 
-#### 목록 조회 (필터링)
+#### List Ideas (Filtering)
 ```bash
-# 상태별 필터
+# Filter by status
 curl "http://localhost:3001/api/ideas?status=in-progress" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
-# 검색
+# Search
 curl "http://localhost:3001/api/ideas?search=AI" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
-# 복합 필터
-curl "http://localhost:3001/api/ideas?status=draft&priority=high&category=기술" \
+# Combined filters
+curl "http://localhost:3001/api/ideas?status=draft&priority=high&category=Technology" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-### 메모 API
+### Memos API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| GET | `/api/memos` | 목록 조회 |
-| GET | `/api/memos/date/:date` | 날짜별 조회 |
-| POST | `/api/memos` | 생성/수정 |
-| DELETE | `/api/memos/:id` | 삭제 |
-| DELETE | `/api/memos/date/:date` | 날짜별 삭제 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/memos` | List memos |
+| GET | `/api/memos/date/:date` | Get memo by date |
+| POST | `/api/memos` | Create/update memo |
+| DELETE | `/api/memos/:id` | Delete memo |
+| DELETE | `/api/memos/date/:date` | Delete by date |
 
-#### 메모 저장
+#### Save Memo
 ```bash
 curl -X POST http://localhost:3001/api/memos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
     "date": "2024-01-15",
-    "content": "오늘의 아이디어 회의 내용..."
+    "content": "Today's brainstorming session notes..."
   }'
 ```
 
-### 히스토리 API
+### History API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| GET | `/api/history` | 전체 이력 |
-| GET | `/api/history/idea/:ideaId` | 아이디어별 이력 |
-| GET | `/api/history/recent` | 최근 활동 요약 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/history` | All history |
+| GET | `/api/history/idea/:ideaId` | History by idea |
+| GET | `/api/history/recent` | Recent activity summary |
 
-## 데이터베이스 스키마
+## Database Schema
 
-### users 테이블
+### users Table
 ```sql
 CREATE TABLE idea_manager.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -242,7 +242,7 @@ CREATE TABLE idea_manager.users (
 );
 ```
 
-### ideas 테이블
+### ideas Table
 ```sql
 CREATE TABLE idea_manager.ideas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -263,7 +263,7 @@ CREATE TABLE idea_manager.ideas (
 );
 ```
 
-### daily_memos 테이블
+### daily_memos Table
 ```sql
 CREATE TABLE idea_manager.daily_memos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -276,7 +276,7 @@ CREATE TABLE idea_manager.daily_memos (
 );
 ```
 
-### idea_history 테이블
+### idea_history Table
 ```sql
 CREATE TABLE idea_manager.idea_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -289,27 +289,27 @@ CREATE TABLE idea_manager.idea_history (
 );
 ```
 
-## 프로젝트 구조
+## Project Structure
 
 ```
-idea-manager/
-├── server/                    # 백엔드
+idea_manager/
+├── server/                    # Backend
 │   └── src/
-│       ├── index.ts          # Express 서버 진입점
-│       ├── database.ts       # DB 연결 및 스키마 초기화
+│       ├── index.ts          # Express server entry point
+│       ├── database.ts       # DB connection and schema initialization
 │       ├── middleware/
-│       │   └── auth.ts       # JWT 인증 미들웨어
+│       │   └── auth.ts       # JWT authentication middleware
 │       └── routes/
-│           ├── auth.ts       # 인증 라우트
-│           ├── ideas.ts      # 아이디어 CRUD
-│           ├── memos.ts      # 메모 CRUD
-│           └── history.ts    # 히스토리 조회
-├── src/                       # 프론트엔드
-│   ├── components/           # 재사용 컴포넌트
+│           ├── auth.ts       # Authentication routes
+│           ├── ideas.ts      # Ideas CRUD
+│           ├── memos.ts      # Memos CRUD
+│           └── history.ts    # History queries
+├── src/                       # Frontend
+│   ├── components/           # Reusable components
 │   │   ├── Layout.tsx
 │   │   ├── AIAssistant.tsx
 │   │   └── AIFeatures.tsx
-│   ├── pages/                # 페이지 컴포넌트
+│   ├── pages/                # Page components
 │   │   ├── Dashboard.tsx
 │   │   ├── IdeaList.tsx
 │   │   ├── IdeaDetail.tsx
@@ -324,66 +324,56 @@ idea-manager/
 │   │   ├── AuthContext.tsx
 │   │   ├── DataContext.tsx
 │   │   └── ThemeContext.tsx
-│   ├── services/             # API 서비스
+│   ├── services/             # API services
 │   │   ├── api.ts
 │   │   └── aiService.ts
-│   ├── hooks/                # 커스텀 훅
-│   ├── types/                # TypeScript 타입
-│   └── utils/                # 유틸리티
-├── public/                    # 정적 파일
-├── .env                       # 환경 변수
+│   ├── hooks/                # Custom hooks
+│   ├── types/                # TypeScript types
+│   └── utils/                # Utilities
+├── public/                    # Static files
+├── .env                       # Environment variables
 ├── package.json
 ├── vite.config.ts
 └── README.md
 ```
 
-## 키보드 단축키
+## Keyboard Shortcuts
 
-| 단축키 | 기능 |
-|--------|------|
-| `Ctrl/Cmd + N` | 새 아이디어 추가 |
-| `Ctrl/Cmd + K` | 검색 페이지 |
-| `Ctrl/Cmd + D` | 다크모드 토글 |
-| `1` | 대시보드 |
-| `2` | 아이디어 목록 |
-| `3` | 칸반 보드 |
-| `4` | 히스토리 |
-| `G + D` | 대시보드로 이동 |
-| `G + L` | 목록으로 이동 |
-| `G + K` | 칸반으로 이동 |
+| Shortcut | Function |
+|----------|----------|
+| `Ctrl/Cmd + N` | Create new idea |
+| `Ctrl/Cmd + K` | Search page |
+| `Ctrl/Cmd + D` | Toggle dark mode |
+| `1` | Dashboard |
+| `2` | Ideas list |
+| `3` | Kanban board |
+| `4` | History |
+| `G + D` | Go to dashboard |
+| `G + L` | Go to list |
+| `G + K` | Go to kanban |
 
-## 스크립트
+## Scripts
 
 ```bash
-npm run dev          # 프론트엔드 개발 서버
-npm run dev:server   # 백엔드 개발 서버
-npm run dev:all      # 동시 실행
-npm run build        # 프로덕션 빌드
-npm run start:server # 백엔드 프로덕션 실행
-npm run lint         # ESLint 실행
-npm run test         # 테스트 실행
-npm run test:ui      # 테스트 UI
-npm run test:coverage # 커버리지 리포트
+npm run dev          # Frontend dev server
+npm run dev:server   # Backend dev server
+npm run dev:all      # Run both concurrently
+npm run build        # Production build
+npm run start        # Production server
+npm run lint         # Run ESLint
+npm run test         # Run tests
+npm run test:ui      # Test UI
+npm run test:coverage # Coverage report
 ```
 
-## 배포
+## Deployment
 
-### Vercel (프론트엔드)
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for Koyeb.
 
-1. Vercel에 프로젝트 연결
-2. 환경 변수 설정: `VITE_API_URL`
-3. 자동 배포
-
-### 백엔드 서버
-
-1. PostgreSQL 데이터베이스 준비
-2. 환경 변수 설정
-3. `npm run start:server` 실행
-
-## 라이선스
+## License
 
 MIT License
 
-## 연락처
+## Contact
 
-프로젝트 링크: [https://github.com/araeLaver/idea-manager](https://github.com/araeLaver/idea-manager)
+Project Link: [https://github.com/araeLaver/idea_manager](https://github.com/araeLaver/idea_manager)
