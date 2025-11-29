@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
   Calendar, Plus, GripVertical,
-  Eye, Edit, Trash2, Clock
+  Eye, Edit, Trash2, LayoutGrid
 } from 'lucide-react';
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
@@ -30,8 +30,7 @@ interface Column {
   id: string;
   title: string;
   status: Idea['status'];
-  color: string;
-  bgColor: string;
+  gradient: string;
   count: number;
 }
 
@@ -58,16 +57,8 @@ function KanbanCard({ idea, onDelete }: KanbanCardProps) {
   return (
     <div
       ref={setNodeRef}
-      style={{
-        ...style,
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)',
-        borderRadius: 'var(--radius-md)',
-        padding: '0.875rem',
-        cursor: isDragging ? 'grabbing' : 'grab',
-        opacity: isDragging ? 0.5 : 1
-      }}
-      className="group"
+      style={style}
+      className={`kanban-card ${isDragging ? 'opacity-50 rotate-2' : ''}`}
       {...attributes}
       {...listeners}
     >
@@ -75,7 +66,7 @@ function KanbanCard({ idea, onDelete }: KanbanCardProps) {
         <h3 className="text-sm font-semibold line-clamp-2 flex-1 mr-2" style={{ color: 'var(--text-primary)' }}>
           {idea.title}
         </h3>
-        <GripVertical className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-tertiary)' }} />
+        <GripVertical className="w-4 h-4 flex-shrink-0 opacity-0 group-hover:opacity-100" style={{ color: 'var(--text-tertiary)' }} />
       </div>
 
       <p className="text-xs mb-3 line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -84,68 +75,49 @@ function KanbanCard({ idea, onDelete }: KanbanCardProps) {
 
       <div className="flex flex-wrap gap-1 mb-3">
         {idea.tags.slice(0, 2).map((tag, index) => (
-          <span
-            key={index}
-            className="text-xs px-1.5 py-0.5 rounded"
-            style={{
-              backgroundColor: 'var(--bg-hover)',
-              color: 'var(--text-secondary)'
-            }}
-          >
-            {tag}
-          </span>
+          <span key={index} className="tag text-xs">{tag}</span>
         ))}
         {idea.tags.length > 2 && (
-          <span className="text-xs px-1.5 py-0.5" style={{ color: 'var(--text-tertiary)' }}>
-            +{idea.tags.length - 2}
-          </span>
+          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>+{idea.tags.length - 2}</span>
         )}
       </div>
 
       <div className="flex items-center justify-between text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>
         <div className="flex items-center">
-          <Calendar className="h-3 w-3 mr-1" />
+          <Calendar className="w-3 h-3 mr-1" />
           {format(new Date(idea.createdAt), 'MM.dd', { locale: ko })}
         </div>
-        <span className="px-1.5 py-0.5 rounded text-xs" style={{
-          backgroundColor: 'var(--bg-hover)',
-          color: 'var(--text-secondary)'
-        }}>
-          {idea.category}
-        </span>
+        <span className="tag text-xs">{idea.category}</span>
       </div>
 
-      <div className="flex items-center justify-between pt-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderTop: '1px solid var(--border-default)' }}>
+      <div
+        className="flex items-center justify-between pt-2 opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ borderTop: '1px solid var(--border-default)' }}
+      >
         <div className="flex gap-1">
           <Link
             to={`/idea/${idea.id}`}
-            className="p-1 rounded hover:bg-blue-50 transition-colors"
-            title="상세보기"
-            style={{ color: 'var(--text-tertiary)' }}
+            className="icon-btn"
+            style={{ width: '1.5rem', height: '1.5rem' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Eye className="h-3 w-3" />
+            <Eye className="w-3 h-3" />
           </Link>
           <Link
             to={`/edit/${idea.id}`}
-            className="p-1 rounded hover:bg-blue-50 transition-colors"
-            title="수정"
-            style={{ color: 'var(--text-tertiary)' }}
+            className="icon-btn"
+            style={{ width: '1.5rem', height: '1.5rem' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Edit className="h-3 w-3" />
+            <Edit className="w-3 h-3" />
           </Link>
         </div>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(idea.id);
-          }}
-          className="p-1 rounded hover:bg-red-50 transition-colors"
-          title="삭제"
-          style={{ color: 'var(--text-tertiary)' }}
+          onClick={(e) => { e.stopPropagation(); onDelete(idea.id); }}
+          className="icon-btn"
+          style={{ width: '1.5rem', height: '1.5rem', color: 'var(--color-error-500)' }}
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="w-3 h-3" />
         </button>
       </div>
     </div>
@@ -160,61 +132,41 @@ interface KanbanColumnProps {
 
 function KanbanColumn({ column, ideas, onDelete }: KanbanColumnProps) {
   return (
-    <div className="flex-1 min-w-80">
-      <div className="p-3 h-full rounded-lg" style={{
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)'
-      }}>
-        <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid var(--border-default)' }}>
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{column.title}</h2>
-            <span className="text-xs px-2 py-0.5 rounded" style={{
-              backgroundColor: 'var(--bg-hover)',
-              color: 'var(--text-secondary)'
-            }}>
-              {column.count}
-            </span>
-          </div>
-          <Link
-            to={`/new?status=${column.status}`}
-            className="p-1.5 rounded hover:bg-blue-50 transition-colors"
-            title={`새 ${column.title} 아이디어 추가`}
-            style={{ color: 'var(--text-tertiary)' }}
+    <div className="kanban-column">
+      <div className="kanban-column-header">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full" style={{ background: column.gradient }} />
+          <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{column.title}</span>
+          <span
+            className="text-xs px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
           >
-            <Plus className="h-4 w-4" />
-          </Link>
+            {column.count}
+          </span>
         </div>
-
-        <SortableContextProvider items={ideas.map(idea => idea.id)}>
-          <div className="space-y-2 min-h-96">
-            {ideas.map((idea) => (
-              <KanbanCard
-                key={idea.id}
-                idea={idea}
-                onDelete={onDelete}
-              />
-            ))}
-            {ideas.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
-                  아직 {column.title} 아이디어가 없습니다
-                </p>
-                <Link
-                  to={`/new?status=${column.status}`}
-                  className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors"
-                  style={{
-                    backgroundColor: 'var(--bg-hover)',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <Plus className="h-3 w-3" />
-                  추가하기
-                </Link>
-              </div>
-            )}
-          </div>
-        </SortableContextProvider>
+        <Link to={`/new?status=${column.status}`} className="icon-btn" style={{ width: '1.5rem', height: '1.5rem' }}>
+          <Plus className="w-4 h-4" />
+        </Link>
       </div>
+
+      <SortableContextProvider items={ideas.map(idea => idea.id)}>
+        <div className="space-y-3 min-h-96">
+          {ideas.map((idea) => (
+            <KanbanCard key={idea.id} idea={idea} onDelete={onDelete} />
+          ))}
+          {ideas.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>
+                아직 {column.title} 아이디어가 없습니다
+              </p>
+              <Link to={`/new?status=${column.status}`} className="btn btn-secondary btn-sm">
+                <Plus className="w-3 h-3" />
+                추가하기
+              </Link>
+            </div>
+          )}
+        </div>
+      </SortableContextProvider>
     </div>
   );
 }
@@ -225,38 +177,10 @@ export function KanbanBoard() {
   const sensors = useSensors(useSensor(PointerSensor));
 
   const columns: Column[] = [
-    {
-      id: 'draft',
-      title: '아이디어 초안',
-      status: 'draft',
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-400',
-      count: ideas.filter(idea => idea.status === 'draft').length,
-    },
-    {
-      id: 'in-progress',
-      title: '개발 진행중',
-      status: 'in-progress',
-      color: 'text-info',
-      bgColor: 'bg-info',
-      count: ideas.filter(idea => idea.status === 'in-progress').length,
-    },
-    {
-      id: 'completed',
-      title: '완료됨',
-      status: 'completed',
-      color: 'text-success',
-      bgColor: 'bg-success',
-      count: ideas.filter(idea => idea.status === 'completed').length,
-    },
-    {
-      id: 'archived',
-      title: '보관됨',
-      status: 'archived',
-      color: 'text-warning',
-      bgColor: 'bg-warning',
-      count: ideas.filter(idea => idea.status === 'archived').length,
-    },
+    { id: 'draft', title: '아이디어 초안', status: 'draft', gradient: 'linear-gradient(135deg, #64748b, #94a3b8)', count: 0 },
+    { id: 'in-progress', title: '개발 진행중', status: 'in-progress', gradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)', count: 0 },
+    { id: 'completed', title: '완료됨', status: 'completed', gradient: 'linear-gradient(135deg, #22c55e, #14b8a6)', count: 0 },
+    { id: 'archived', title: '보관됨', status: 'archived', gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', count: 0 },
   ];
 
   const handleDelete = async (id: string) => {
@@ -280,33 +204,20 @@ export function KanbanBoard() {
 
     if (!over) return;
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    // Find the active idea
-    const activeIdea = ideas.find(idea => idea.id === activeId);
+    const activeIdea = ideas.find(idea => idea.id === active.id);
     if (!activeIdea) return;
 
-    // Determine the new status based on where it was dropped
     let newStatus: Idea['status'] = activeIdea.status;
-
-    // Check if dropped on a column
-    const column = columns.find(col => col.id === overId);
+    const column = columns.find(col => col.id === over.id);
     if (column) {
       newStatus = column.status;
     } else {
-      // Check if dropped on another idea - get that idea's status
-      const overIdea = ideas.find(idea => idea.id === overId);
-      if (overIdea) {
-        newStatus = overIdea.status;
-      }
+      const overIdea = ideas.find(idea => idea.id === over.id);
+      if (overIdea) newStatus = overIdea.status;
     }
 
-    // Update the idea's status if it changed
     if (newStatus !== activeIdea.status) {
-      updateIdea(activeId, { status: newStatus }).catch(error => {
-        console.error('Failed to update idea status:', error);
-      });
+      updateIdea(active.id as string, { status: newStatus }).catch(console.error);
     }
   };
 
@@ -314,10 +225,10 @@ export function KanbanBoard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center" style={{ height: '400px' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-          <p className="text-secondary">아이디어를 불러오는 중...</p>
+          <div className="spinner mx-auto mb-4" />
+          <p style={{ color: 'var(--text-secondary)' }}>아이디어를 불러오는 중...</p>
         </div>
       </div>
     );
@@ -326,40 +237,33 @@ export function KanbanBoard() {
   return (
     <div>
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
-              칸반 보드
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>드래그 앤 드롭으로 아이디어 상태를 관리하세요</p>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="section-icon">
+                <LayoutGrid className="w-5 h-5" />
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                칸반 보드
+              </h1>
+            </div>
+            <p className="text-sm ml-12" style={{ color: 'var(--text-secondary)' }}>
+              드래그 앤 드롭으로 아이디어 상태를 관리하세요
+            </p>
           </div>
-
-          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>
-            <Clock className="h-4 w-4" />
-            <span>총 {ideas.length}개</span>
+          <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            총 {ideas.length}개
           </div>
         </div>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-6">
           {columns.map((column) => {
             const columnIdeas = ideas.filter(idea => idea.status === column.status);
             return (
-              <SortableContext
-                key={column.id}
-                items={columnIdeas.map(idea => idea.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <KanbanColumn
-                  column={{ ...column, count: columnIdeas.length }}
-                  ideas={columnIdeas}
-                  onDelete={handleDelete}
-                />
+              <SortableContext key={column.id} items={columnIdeas.map(idea => idea.id)} strategy={verticalListSortingStrategy}>
+                <KanbanColumn column={{ ...column, count: columnIdeas.length }} ideas={columnIdeas} onDelete={handleDelete} />
               </SortableContext>
             );
           })}
@@ -367,15 +271,9 @@ export function KanbanBoard() {
 
         <DragOverlay>
           {activeIdea && (
-            <div className="card opacity-95 scale-105 shadow-2xl rotate-3">
-              <div className="p-4">
-                <h3 className="text-base font-semibold text-primary mb-2">
-                  {activeIdea.title}
-                </h3>
-                <p className="text-secondary text-sm line-clamp-2">
-                  {activeIdea.description}
-                </p>
-              </div>
+            <div className="card p-4 shadow-xl rotate-3 scale-105">
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{activeIdea.title}</h3>
+              <p className="text-sm line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{activeIdea.description}</p>
             </div>
           )}
         </DragOverlay>
