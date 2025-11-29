@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Lightbulb, LayoutGrid, Calendar, History, Search, Plus, User, LogOut, UserPlus, X, Moon, Sun } from 'lucide-react';
+import { Home, Lightbulb, LayoutGrid, Calendar, History, Search, Plus, User, LogOut, UserPlus, X, Moon, Sun, Menu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState } from 'react';
@@ -10,6 +10,7 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [showBanner, setShowBanner] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { path: '/', icon: Home, label: '대시보드' },
@@ -20,23 +21,37 @@ export function Layout() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}>
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50" style={{
-        backgroundColor: 'var(--bg-surface)',
-        borderBottom: '1px solid var(--border-default)'
-      }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
+    <div className="app-container">
+      {/* Header */}
+      <header className="header">
+        <div className="page-container" style={{ padding: '0 var(--space-6)' }}>
+          <div className="flex items-center justify-between" style={{ height: '4rem' }}>
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Lightbulb className="w-6 h-6" style={{ color: 'var(--color-blue-500)' }} />
-              <span className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <Link
+              to="/"
+              className="flex items-center gap-3 transition-colors"
+              style={{ textDecoration: 'none' }}
+            >
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: '2.25rem',
+                  height: '2.25rem',
+                  borderRadius: 'var(--radius-lg)',
+                  background: 'var(--gradient-primary)',
+                }}
+              >
+                <Lightbulb className="w-5 h-5 text-white" />
+              </div>
+              <span
+                className="text-lg font-bold hidden sm:block"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 아이디어 매니저
               </span>
             </Link>
 
-            {/* Center Navigation */}
+            {/* Center Navigation - Desktop */}
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map(({ path, icon: Icon, label }) => {
                 const isActive = location.pathname === path;
@@ -44,14 +59,14 @@ export function Layout() {
                   <Link
                     key={path}
                     to={path}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+                    className="nav-link"
                     style={{
-                      backgroundColor: isActive ? 'var(--bg-hover)' : 'transparent',
-                      color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
+                      backgroundColor: isActive ? 'var(--bg-subtle)' : 'transparent',
+                      color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                     }}
                   >
                     <Icon className="w-4 h-4" />
-                    {label}
+                    <span>{label}</span>
                   </Link>
                 );
               })}
@@ -59,102 +74,191 @@ export function Layout() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              {/* Search */}
               <button
                 onClick={() => navigate('/search')}
-                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="icon-btn"
                 title="검색"
               >
-                <Search className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+                <Search className="w-5 h-5" />
               </button>
 
+              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="icon-btn"
                 title={theme === 'light' ? '다크 모드' : '라이트 모드'}
               >
                 {theme === 'light' ? (
-                  <Moon className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+                  <Moon className="w-5 h-5" />
                 ) : (
-                  <Sun className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+                  <Sun className="w-5 h-5" />
                 )}
               </button>
 
+              {/* New Idea Button */}
               <button
                 onClick={() => navigate('/new')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white relative overflow-hidden group"
-                style={{
-                  background: 'var(--gradient-purple-pink)',
-                  boxShadow: 'var(--shadow-md)',
-                  transition: 'all 0.3s var(--ease-smooth)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                }}
+                className="btn btn-primary hidden sm:flex"
+                style={{ padding: 'var(--space-2) var(--space-4)' }}
               >
-                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-                새 아이디어
+                <Plus className="w-4 h-4" />
+                <span>새 아이디어</span>
               </button>
 
+              {/* Mobile New Idea */}
+              <button
+                onClick={() => navigate('/new')}
+                className="icon-btn sm:hidden"
+                style={{
+                  background: 'var(--gradient-primary)',
+                  color: 'white',
+                }}
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+
+              {/* User Section */}
               {user ? (
-                <div className="flex items-center gap-2 ml-2 pl-2" style={{ borderLeft: '1px solid var(--border-default)' }}>
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <div
+                  className="hidden sm:flex items-center gap-3 ml-2 pl-3"
+                  style={{ borderLeft: '1px solid var(--border-default)' }}
+                >
+                  <div className="avatar" style={{ width: '2rem', height: '2rem', fontSize: 'var(--text-xs)' }}>
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                     {user.name}
                   </span>
                   <button
                     onClick={logout}
-                    className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="icon-btn"
                     title="로그아웃"
                   >
-                    <LogOut className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+                    <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => navigate('/login')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ml-2"
-                  style={{
-                    backgroundColor: 'var(--bg-hover)',
-                    color: 'var(--text-primary)'
-                  }}
+                  className="btn btn-secondary hidden sm:flex"
+                  style={{ padding: 'var(--space-2) var(--space-4)' }}
                 >
                   <User className="w-4 h-4" />
-                  로그인
+                  <span>로그인</span>
                 </button>
               )}
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="icon-btn md:hidden"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div
+            className="md:hidden"
+            style={{
+              borderTop: '1px solid var(--border-default)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <div className="p-4">
+              <nav className="flex flex-col gap-1">
+                {navItems.map(({ path, icon: Icon, label }) => {
+                  const isActive = location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 p-3 rounded-lg transition-colors"
+                      style={{
+                        backgroundColor: isActive ? 'var(--bg-subtle)' : 'transparent',
+                        color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Mobile User Section */}
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-default)' }}>
+                {user ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="avatar" style={{ width: '2.5rem', height: '2.5rem' }}>
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                        {user.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="btn btn-ghost"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>로그아웃</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      navigate('/login');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="btn btn-secondary w-full"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>로그인</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Guest Banner */}
       {isGuest && showBanner && (
-        <div style={{ backgroundColor: 'var(--color-blue-500)', color: 'white' }}>
-          <div className="max-w-7xl mx-auto px-6 py-3">
-            <div className="flex items-center justify-between gap-4">
+        <div className="banner banner-info">
+          <div className="page-container" style={{ padding: '0 var(--space-6)' }}>
+            <div className="flex items-center justify-between gap-4 py-3">
               <div className="flex items-center gap-3 flex-1">
                 <UserPlus className="w-5 h-5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    게스트 모드로 이용 중입니다. 데이터는 이 브라우저에만 저장됩니다.
-                  </p>
-                </div>
+                <p className="text-sm font-medium">
+                  게스트 모드로 이용 중입니다. 데이터는 이 브라우저에만 저장됩니다.
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate('/register')}
-                  className="px-4 py-1.5 rounded-md text-sm font-semibold transition-colors"
-                  style={{ backgroundColor: 'white', color: 'var(--color-blue-600)' }}
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: 'white',
+                    color: 'var(--color-primary-600)',
+                    padding: 'var(--space-2) var(--space-4)',
+                  }}
                 >
                   회원가입
                 </button>
                 <button
                   onClick={() => setShowBanner(false)}
-                  className="p-1 hover:bg-white/20 rounded transition-colors"
+                  className="p-1 rounded transition-colors"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -165,7 +269,7 @@ export function Layout() {
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="page-container">
         <Outlet />
       </main>
     </div>

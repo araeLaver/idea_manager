@@ -1,93 +1,160 @@
-import React from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass';
-  size?: 'sm' | 'md' | 'lg';
-  children: React.ReactNode;
-  icon?: React.ReactNode;
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+type ButtonSize = 'sm' | 'md' | 'lg';
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  isLoading?: boolean;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  icon?: ReactNode;
   fullWidth?: boolean;
 }
 
-export function Button({
-  variant = 'primary',
-  size = 'md',
-  children,
-  icon,
-  fullWidth = false,
-  className = '',
-  disabled,
-  ...props
-}: ButtonProps) {
-  const baseStyles = `
-    group inline-flex items-center justify-center gap-2.5 font-semibold rounded-xl
-    transition-all duration-200 relative overflow-hidden
-    disabled:opacity-50 disabled:cursor-not-allowed
-    focus:outline-none focus:ring-2 focus:ring-offset-2
-    ${fullWidth ? 'w-full' : ''}
-  `;
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      variant = 'primary',
+      size = 'md',
+      isLoading = false,
+      leftIcon,
+      rightIcon,
+      icon,
+      fullWidth = false,
+      disabled,
+      children,
+      style,
+      ...props
+    },
+    ref
+  ) => {
+    const isDisabled = disabled || isLoading;
 
-  const variants = {
-    primary: `
-      bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600
-      text-white shadow-lg shadow-indigo-500/50
-      hover:shadow-xl hover:shadow-indigo-500/60
-      hover:scale-[1.02] hover:-translate-y-0.5
-      active:scale-[0.98] active:translate-y-0
-      focus:ring-indigo-500
-    `,
-    secondary: `
-      bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600
-      text-white shadow-lg shadow-emerald-500/50
-      hover:shadow-xl hover:shadow-emerald-500/60
-      hover:scale-[1.02] hover:-translate-y-0.5
-      active:scale-[0.98] active:translate-y-0
-      focus:ring-emerald-500
-    `,
-    danger: `
-      bg-gradient-to-br from-rose-600 via-red-600 to-pink-600
-      text-white shadow-lg shadow-rose-500/50
-      hover:shadow-xl hover:shadow-rose-500/60
-      hover:scale-[1.02] hover:-translate-y-0.5
-      active:scale-[0.98] active:translate-y-0
-      focus:ring-rose-500
-    `,
-    ghost: `
-      bg-white/80 backdrop-blur-sm
-      text-slate-700 border border-slate-200
-      hover:bg-white hover:border-slate-300
-      hover:shadow-md
-      focus:ring-slate-400
-    `,
-    glass: `
-      bg-white/10 backdrop-blur-md
-      text-white border border-white/20
-      hover:bg-white/20 hover:border-white/30
-      shadow-lg shadow-black/10
-      focus:ring-white/50
-    `
-  };
+    const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
+      primary: {
+        background: 'var(--gradient-primary)',
+        color: 'white',
+        border: 'none',
+        boxShadow: 'var(--shadow-sm)',
+      },
+      secondary: {
+        backgroundColor: 'var(--bg-surface)',
+        color: 'var(--text-primary)',
+        border: '1px solid var(--border-default)',
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+        color: 'var(--text-secondary)',
+        border: 'none',
+      },
+      danger: {
+        backgroundColor: 'var(--color-error-600)',
+        color: 'white',
+        border: 'none',
+        boxShadow: 'var(--shadow-sm)',
+      },
+      success: {
+        backgroundColor: 'var(--color-success-600)',
+        color: 'white',
+        border: 'none',
+        boxShadow: 'var(--shadow-sm)',
+      },
+    };
 
-  const sizes = {
-    sm: 'px-4 py-2 text-sm',
-    md: 'px-6 py-2.5 text-base',
-    lg: 'px-8 py-3 text-lg'
-  };
+    const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
+      sm: {
+        padding: '0.5rem 0.75rem',
+        fontSize: '0.75rem',
+        gap: '0.25rem',
+      },
+      md: {
+        padding: '0.75rem 1.25rem',
+        fontSize: '0.875rem',
+        gap: '0.5rem',
+      },
+      lg: {
+        padding: '1rem 1.5rem',
+        fontSize: '1rem',
+        gap: '0.5rem',
+      },
+    };
 
+    const baseStyles: React.CSSProperties = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: 'var(--font-sans)',
+      fontWeight: 600,
+      lineHeight: 1,
+      textDecoration: 'none',
+      borderRadius: '0.5rem',
+      cursor: isDisabled ? 'not-allowed' : 'pointer',
+      opacity: isDisabled ? 0.5 : 1,
+      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      outline: 'none',
+      width: fullWidth ? '100%' : 'auto',
+      ...variantStyles[variant],
+      ...sizeStyles[size],
+      ...style,
+    };
+
+    const displayIcon = icon || leftIcon;
+
+    return (
+      <button
+        ref={ref}
+        disabled={isDisabled}
+        style={baseStyles}
+        {...props}
+      >
+        {isLoading ? (
+          <>
+            <LoadingSpinner />
+            <span style={{ marginLeft: '0.5rem' }}>로딩 중...</span>
+          </>
+        ) : (
+          <>
+            {displayIcon && <span style={{ flexShrink: 0 }}>{displayIcon}</span>}
+            {children && <span>{children}</span>}
+            {rightIcon && <span style={{ flexShrink: 0 }}>{rightIcon}</span>}
+          </>
+        )}
+      </button>
+    );
+  }
+);
+
+Button.displayName = 'Button';
+
+function LoadingSpinner() {
   return (
-    <button
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-      disabled={disabled}
-      {...props}
+    <svg
+      style={{
+        width: '1rem',
+        height: '1rem',
+        animation: 'spin 1s linear infinite',
+      }}
+      viewBox="0 0 24 24"
+      fill="none"
     >
-      {icon && <span className="relative z-10 transition-transform group-hover:scale-110">{icon}</span>}
-      <span className="relative z-10">{children}</span>
-      {variant !== 'ghost' && variant !== 'glass' && (
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
-                     -translate-x-full group-hover:translate-x-full transition-transform duration-700"
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
-    </button>
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeOpacity="0.25"
+      />
+      <path
+        d="M12 2C6.477 2 2 6.477 2 12"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
+
+export default Button;

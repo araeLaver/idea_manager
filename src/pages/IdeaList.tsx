@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Calendar, Trash2, Grid3X3, List, Eye, PlusCircle } from 'lucide-react';
+import { Calendar, Trash2, Grid3X3, List, Eye, Plus, Lightbulb } from 'lucide-react';
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
 
@@ -28,20 +28,48 @@ export function IdeaList() {
   });
 
   const getStatusLabel = (status: Idea['status']) => {
-    switch (status) {
-      case 'draft': return '초안';
-      case 'in-progress': return '진행중';
-      case 'completed': return '완료';
-      case 'archived': return '보관됨';
-    }
+    const labels: Record<string, string> = {
+      'draft': '초안',
+      'in-progress': '진행중',
+      'completed': '완료',
+      'archived': '보관됨',
+    };
+    return labels[status] || status;
   };
+
+  const getStatusClass = (status: string) => {
+    const classes: Record<string, string> = {
+      'draft': 'status-draft',
+      'in-progress': 'status-in-progress',
+      'completed': 'status-completed',
+      'archived': 'status-archived',
+    };
+    return classes[status] || 'status-draft';
+  };
+
+  const getStatusGradient = (status: string) => {
+    const gradients: Record<string, string> = {
+      'draft': 'linear-gradient(135deg, #64748b 0%, #94a3b8 100%)',
+      'in-progress': 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+      'completed': 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
+      'archived': 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+    };
+    return gradients[status] || gradients.draft;
+  };
+
+  const filterButtons = [
+    { key: 'all', label: '전체', count: ideas.length },
+    { key: 'draft', label: '초안', count: ideas.filter(i => i.status === 'draft').length },
+    { key: 'in-progress', label: '진행중', count: ideas.filter(i => i.status === 'in-progress').length },
+    { key: 'completed', label: '완료', count: ideas.filter(i => i.status === 'completed').length },
+  ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center" style={{ height: '400px' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-          <p className="text-secondary">아이디어를 불러오는 중...</p>
+          <div className="spinner mx-auto mb-4" />
+          <p style={{ color: 'var(--text-secondary)' }}>아이디어를 불러오는 중...</p>
         </div>
       </div>
     );
@@ -49,149 +77,102 @@ export function IdeaList() {
 
   return (
     <div>
+      {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
               아이디어 목록
             </h1>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>창의적인 아이디어들을 관리해보세요</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              창의적인 아이디어들을 관리해보세요
+            </p>
           </div>
 
-          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-hover)' }}>
+          {/* View Toggle */}
+          <div
+            className="flex gap-1 p-1 rounded-lg"
+            style={{ backgroundColor: 'var(--bg-subtle)' }}
+          >
             <button
               onClick={() => setViewMode('card')}
-              className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all"
               style={{
                 backgroundColor: viewMode === 'card' ? 'var(--bg-surface)' : 'transparent',
                 color: viewMode === 'card' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                border: viewMode === 'card' ? '1px solid var(--border-default)' : '1px solid transparent'
+                boxShadow: viewMode === 'card' ? 'var(--shadow-sm)' : 'none',
               }}
             >
-              <Grid3X3 className="h-4 w-4" />
+              <Grid3X3 className="w-4 h-4" />
               카드형
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className="px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all"
               style={{
                 backgroundColor: viewMode === 'list' ? 'var(--bg-surface)' : 'transparent',
                 color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                border: viewMode === 'list' ? '1px solid var(--border-default)' : '1px solid transparent'
+                boxShadow: viewMode === 'list' ? 'var(--shadow-sm)' : 'none',
               }}
             >
-              <List className="h-4 w-4" />
+              <List className="w-4 h-4" />
               목록형
             </button>
           </div>
         </div>
 
+        {/* Filter Buttons */}
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilter('all')}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all relative overflow-hidden"
-            style={{
-              background: filter === 'all' ? 'var(--gradient-purple-pink)' : 'var(--bg-hover)',
-              color: filter === 'all' ? 'white' : 'var(--text-primary)',
-              boxShadow: filter === 'all' ? 'var(--shadow-lg)' : 'none',
-              transform: filter === 'all' ? 'scale(1.05)' : 'scale(1)',
-            }}
-          >
-            전체 <span className={filter === 'all' ? 'ml-1.5 opacity-90' : 'ml-1.5'}>({ideas.length})</span>
-          </button>
-          <button
-            onClick={() => setFilter('draft')}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: filter === 'draft' ? 'var(--gradient-primary)' : 'var(--bg-hover)',
-              color: filter === 'draft' ? 'white' : 'var(--text-primary)',
-              boxShadow: filter === 'draft' ? 'var(--shadow-lg)' : 'none',
-              transform: filter === 'draft' ? 'scale(1.05)' : 'scale(1)',
-            }}
-          >
-            초안 <span className={filter === 'draft' ? 'ml-1.5 opacity-90' : 'ml-1.5'}>({ideas.filter(i => i.status === 'draft').length})</span>
-          </button>
-          <button
-            onClick={() => setFilter('in-progress')}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: filter === 'in-progress' ? 'var(--gradient-blue-cyan)' : 'var(--bg-hover)',
-              color: filter === 'in-progress' ? 'white' : 'var(--text-primary)',
-              boxShadow: filter === 'in-progress' ? 'var(--shadow-lg)' : 'none',
-              transform: filter === 'in-progress' ? 'scale(1.05)' : 'scale(1)',
-            }}
-          >
-            진행중 <span className={filter === 'in-progress' ? 'ml-1.5 opacity-90' : 'ml-1.5'}>({ideas.filter(i => i.status === 'in-progress').length})</span>
-          </button>
-          <button
-            onClick={() => setFilter('completed')}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: filter === 'completed' ? 'var(--gradient-success)' : 'var(--bg-hover)',
-              color: filter === 'completed' ? 'white' : 'var(--text-primary)',
-              boxShadow: filter === 'completed' ? 'var(--shadow-lg)' : 'none',
-              transform: filter === 'completed' ? 'scale(1.05)' : 'scale(1)',
-            }}
-          >
-            완료 <span className={filter === 'completed' ? 'ml-1.5 opacity-90' : 'ml-1.5'}>({ideas.filter(i => i.status === 'completed').length})</span>
-          </button>
+          {filterButtons.map(({ key, label, count }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`filter-btn ${filter === key ? 'active' : ''}`}
+            >
+              {label}
+              <span style={{ marginLeft: '0.5rem', opacity: filter === key ? 0.9 : 0.6 }}>
+                ({count})
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* Content */}
       {filteredIdeas.length === 0 ? (
-        <div className="text-center py-16" style={{
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-lg)'
-        }}>
-          <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>아이디어가 없습니다</h3>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>새로운 아이디어를 추가해보세요</p>
-          <Link
-            to="/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
-            style={{ backgroundColor: 'var(--color-blue-600)' }}
-          >
-            <PlusCircle className="h-4 w-4" />
-            첫 번째 아이디어 추가
-          </Link>
+        <div className="card">
+          <div className="empty-state">
+            <Lightbulb className="empty-state-icon" />
+            <h3 className="empty-state-title">아이디어가 없습니다</h3>
+            <p className="empty-state-description">새로운 아이디어를 추가해보세요</p>
+            <Link to="/new" className="btn btn-primary">
+              <Plus className="w-4 h-4" />
+              <span>첫 번째 아이디어 추가</span>
+            </Link>
+          </div>
         </div>
       ) : viewMode === 'card' ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        /* Card View */
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredIdeas.map((idea, index) => (
             <div
               key={idea.id}
-              className="p-5 rounded-xl group relative overflow-hidden"
+              className="idea-card group"
               style={{
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-default)',
-                transition: 'all 0.3s var(--ease-smooth)',
-                animation: `fadeInUp 0.4s ease-out ${index * 0.05}s both`,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-xl)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-default)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
+                animationDelay: `${index * 50}ms`,
               }}
             >
-              {/* Gradient accent on hover */}
+              {/* Accent Bar */}
               <div
-                className="absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background: idea.status === 'completed' ? 'var(--gradient-success)' :
-                             idea.status === 'in-progress' ? 'var(--gradient-blue-cyan)' :
-                             idea.status === 'archived' ? 'var(--gradient-warning)' :
-                             'var(--gradient-purple-pink)'
-                }}
+                className="idea-card-accent"
+                style={{ background: getStatusGradient(idea.status) }}
               />
+
+              {/* Header */}
               <div className="flex items-start justify-between mb-3">
                 <Link
                   to={`/idea/${idea.id}`}
-                  className="text-base font-semibold flex-1 mr-2 hover:underline"
+                  className="text-base font-semibold flex-1 mr-2 line-clamp-1"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   {idea.title}
@@ -199,158 +180,126 @@ export function IdeaList() {
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Link
                     to={`/idea/${idea.id}`}
-                    className="p-1.5 rounded hover:bg-blue-50 transition-colors"
-                    title="상세보기"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    className="icon-btn"
+                    style={{ width: '1.75rem', height: '1.75rem' }}
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <Eye className="w-3.5 h-3.5" />
                   </Link>
                   <button
                     onClick={() => handleDelete(idea.id)}
-                    className="p-1.5 rounded hover:bg-red-50 transition-colors"
-                    title="삭제"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    className="icon-btn"
+                    style={{
+                      width: '1.75rem',
+                      height: '1.75rem',
+                      color: 'var(--color-error-500)',
+                    }}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
-              <p className="text-sm mb-4 line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              {/* Description */}
+              <p
+                className="text-sm mb-4 line-clamp-2 leading-relaxed"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {idea.description}
               </p>
 
+              {/* Status & Category */}
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="text-xs px-2 py-0.5 rounded" style={{
-                  backgroundColor: idea.status === 'completed' ? 'var(--color-green-50)' :
-                                 idea.status === 'in-progress' ? 'var(--color-blue-50)' :
-                                 idea.status === 'archived' ? 'var(--color-yellow-50)' :
-                                 'var(--color-gray-100)',
-                  color: idea.status === 'completed' ? 'var(--color-green-600)' :
-                        idea.status === 'in-progress' ? 'var(--color-blue-600)' :
-                        idea.status === 'archived' ? 'var(--color-yellow-500)' :
-                        'var(--color-gray-600)'
-                }}>
+                <span className={`badge ${getStatusClass(idea.status)}`}>
                   {getStatusLabel(idea.status)}
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded" style={{
-                  backgroundColor: 'var(--bg-hover)',
-                  color: 'var(--text-secondary)'
-                }}>
-                  {idea.category}
-                </span>
+                <span className="tag">{idea.category}</span>
               </div>
 
-              <div className="flex flex-wrap gap-1 mb-3">
-                {idea.tags.slice(0, 3).map((tag, tagIndex) => (
-                  <span key={tagIndex} className="text-xs px-2 py-0.5 rounded" style={{
-                    backgroundColor: 'var(--bg-hover)',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    {tag}
-                  </span>
-                ))}
-                {idea.tags.length > 3 && (
-                  <span className="text-xs px-2 py-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                    +{idea.tags.length - 3}
-                  </span>
-                )}
-              </div>
+              {/* Tags */}
+              {idea.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {idea.tags.slice(0, 3).map((tag, tagIndex) => (
+                    <span key={tagIndex} className="tag text-xs">
+                      {tag}
+                    </span>
+                  ))}
+                  {idea.tags.length > 3 && (
+                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      +{idea.tags.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
 
-              <div className="flex items-center text-xs pt-3" style={{
-                color: 'var(--text-tertiary)',
-                borderTop: '1px solid var(--border-default)'
-              }}>
-                <Calendar className="h-3 w-3 mr-1.5" />
-                {format(new Date(idea.createdAt), 'MM.dd', { locale: ko })}
+              {/* Footer */}
+              <div
+                className="flex items-center text-xs pt-3"
+                style={{
+                  color: 'var(--text-tertiary)',
+                  borderTop: '1px solid var(--border-subtle)',
+                }}
+              >
+                <Calendar className="w-3 h-3 mr-1.5" />
+                {format(new Date(idea.createdAt), 'yyyy.MM.dd', { locale: ko })}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
+        /* List View */
+        <div className="flex flex-col gap-3">
           {filteredIdeas.map((idea) => (
-            <div
-              key={idea.id}
-              className="p-4 rounded-lg group transition-colors"
-              style={{
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-default)'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-hover)'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-default)'}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <Link
-                  to={`/idea/${idea.id}`}
-                  className="text-base font-semibold hover:underline flex-1"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {idea.title}
-                </Link>
-                <div className="flex items-center gap-2 ml-4">
-                  <span className="text-xs px-2 py-0.5 rounded" style={{
-                    backgroundColor: idea.status === 'completed' ? 'var(--color-green-50)' :
-                                   idea.status === 'in-progress' ? 'var(--color-blue-50)' :
-                                   idea.status === 'archived' ? 'var(--color-yellow-50)' :
-                                   'var(--color-gray-100)',
-                    color: idea.status === 'completed' ? 'var(--color-green-600)' :
-                          idea.status === 'in-progress' ? 'var(--color-blue-600)' :
-                          idea.status === 'archived' ? 'var(--color-yellow-500)' :
-                          'var(--color-gray-600)'
-                  }}>
-                    {getStatusLabel(idea.status)}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded" style={{
-                    backgroundColor: 'var(--bg-hover)',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    {idea.category}
-                  </span>
+            <div key={idea.id} className="card card-hover group" style={{ padding: 'var(--space-4)' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to={`/idea/${idea.id}`}
+                    className="text-base font-semibold mb-2 block"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {idea.title}
+                  </Link>
+                  <p
+                    className="text-sm mb-3 line-clamp-2 leading-relaxed"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {idea.description}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`badge ${getStatusClass(idea.status)}`}>
+                      {getStatusLabel(idea.status)}
+                    </span>
+                    <span className="tag">{idea.category}</span>
+                    {idea.tags.slice(0, 3).map((tag, tagIndex) => (
+                      <span key={tagIndex} className="tag text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                    {idea.tags.length > 3 && (
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        +{idea.tags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-2">
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link
-                      to={`/idea/${idea.id}`}
-                      className="p-1.5 rounded hover:bg-blue-50 transition-colors"
-                      title="상세보기"
-                      style={{ color: 'var(--text-tertiary)' }}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
+                    <Link to={`/idea/${idea.id}`} className="icon-btn">
+                      <Eye className="w-4 h-4" />
                     </Link>
                     <button
                       onClick={() => handleDelete(idea.id)}
-                      className="p-1.5 rounded hover:bg-red-50 transition-colors"
-                      title="삭제"
-                      style={{ color: 'var(--text-tertiary)' }}
+                      className="icon-btn"
+                      style={{ color: 'var(--color-error-500)' }}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-              </div>
-
-              <p className="text-sm mb-3 line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                {idea.description}
-              </p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-wrap gap-1">
-                  {idea.tags.slice(0, 4).map((tag, tagIndex) => (
-                    <span key={tagIndex} className="text-xs px-2 py-0.5 rounded" style={{
-                      backgroundColor: 'var(--bg-hover)',
-                      color: 'var(--text-secondary)'
-                    }}>
-                      {tag}
-                    </span>
-                  ))}
-                  {idea.tags.length > 4 && (
-                    <span className="text-xs px-2 py-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                      +{idea.tags.length - 4}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  <Calendar className="h-3 w-3 mr-1.5" />
-                  {format(new Date(idea.createdAt), 'yyyy.MM.dd', { locale: ko })}
+                  <div className="flex items-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    <Calendar className="w-3 h-3 mr-1.5" />
+                    {format(new Date(idea.createdAt), 'yyyy.MM.dd', { locale: ko })}
+                  </div>
                 </div>
               </div>
             </div>
