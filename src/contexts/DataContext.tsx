@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { Idea, IdeaFormData } from '../types';
 import api from '../services/api';
@@ -40,7 +40,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
 
-  const refreshIdeas = async () => {
+  const refreshIdeas = useCallback(async () => {
     if (!isAuthenticated) {
       setIdeas([]);
       return;
@@ -57,9 +57,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
-  const refreshStats = async () => {
+  const refreshStats = useCallback(async () => {
     if (!isAuthenticated) {
       setStats(null);
       return;
@@ -71,7 +71,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Error fetching stats:', err);
     }
-  };
+  }, [isAuthenticated]);
 
   const createIdea = async (ideaData: IdeaFormData): Promise<Idea> => {
     try {
