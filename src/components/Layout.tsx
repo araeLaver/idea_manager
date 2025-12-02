@@ -1,8 +1,9 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Lightbulb, LayoutGrid, Calendar, History, Search, Plus, User, LogOut, UserPlus, X, Moon, Sun, Menu } from 'lucide-react';
+import { Home, Lightbulb, LayoutGrid, Calendar, History, Search, Plus, User, LogOut, UserPlus, X, Moon, Sun, Menu, HelpCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState } from 'react';
+import { Tutorial } from './Tutorial';
 
 export function Layout() {
   const { user, logout, isGuest } = useAuth();
@@ -11,13 +12,14 @@ export function Layout() {
   const navigate = useNavigate();
   const [showBanner, setShowBanner] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [runTutorial, setRunTutorial] = useState(false);
 
   const navItems = [
-    { path: '/', icon: Home, label: '대시보드' },
-    { path: '/ideas', icon: Lightbulb, label: '아이디어' },
-    { path: '/kanban', icon: LayoutGrid, label: '칸반' },
-    { path: '/memos', icon: Calendar, label: '메모' },
-    { path: '/history', icon: History, label: '히스토리' },
+    { path: '/', icon: Home, label: '대시보드', id: 'nav-dashboard' },
+    { path: '/ideas', icon: Lightbulb, label: '아이디어', id: 'nav-ideas' },
+    { path: '/kanban', icon: LayoutGrid, label: '칸반', id: 'nav-kanban' },
+    { path: '/memos', icon: Calendar, label: '메모', id: 'nav-memos' },
+    { path: '/history', icon: History, label: '히스토리', id: 'nav-history' },
   ];
 
   return (
@@ -53,12 +55,13 @@ export function Layout() {
 
             {/* Center Navigation - Desktop */}
             <nav className="hidden md:flex items-center gap-1">
-              {navItems.map(({ path, icon: Icon, label }) => {
+              {navItems.map(({ path, icon: Icon, label, id }) => {
                 const isActive = location.pathname === path;
                 return (
                   <Link
                     key={path}
                     to={path}
+                    id={id}
                     className="nav-link"
                     style={{
                       backgroundColor: isActive ? 'var(--bg-subtle)' : 'transparent',
@@ -74,11 +77,29 @@ export function Layout() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              {/* Tour Button - Guest Only */}
+              {isGuest && (
+                <button
+                  onClick={() => {
+                    if (location.pathname !== '/') {
+                      navigate('/');
+                    }
+                    setTimeout(() => setRunTutorial(true), 100);
+                  }}
+                  className="icon-btn"
+                  title="둘러보기"
+                  id="btn-tour"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </button>
+              )}
+
               {/* Search */}
               <button
                 onClick={() => navigate('/search')}
                 className="icon-btn"
                 title="검색"
+                id="btn-search"
               >
                 <Search className="w-5 h-5" />
               </button>
@@ -88,6 +109,7 @@ export function Layout() {
                 onClick={toggleTheme}
                 className="icon-btn"
                 title={theme === 'light' ? '다크 모드' : '라이트 모드'}
+                id="btn-theme"
               >
                 {theme === 'light' ? (
                   <Moon className="w-5 h-5" />
@@ -101,6 +123,7 @@ export function Layout() {
                 onClick={() => navigate('/new')}
                 className="btn btn-primary hidden sm:flex"
                 style={{ padding: 'var(--space-2) var(--space-4)' }}
+                id="btn-new-idea"
               >
                 <Plus className="w-4 h-4" />
                 <span>새 아이디어</span>
@@ -272,6 +295,9 @@ export function Layout() {
       <main className="page-container">
         <Outlet />
       </main>
+
+      {/* Tutorial */}
+      <Tutorial run={runTutorial} onFinish={() => setRunTutorial(false)} />
     </div>
   );
 }
