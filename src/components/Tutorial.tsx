@@ -1,5 +1,5 @@
-import Joyride, { STATUS } from 'react-joyride';
-import type { CallBackProps, Step } from 'react-joyride';
+import Joyride, { STATUS } from 'react-joyride-react-19';
+import type { CallBackProps, Step } from 'react-joyride-react-19';
 import { useState, useEffect } from 'react';
 
 interface TutorialProps {
