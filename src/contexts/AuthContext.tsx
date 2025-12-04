@@ -45,10 +45,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       } else if (guestMode === 'true') {
         setIsGuest(true);
-      } else {
-        // 첫 방문자는 자동으로 게스트 모드 시작
-        localStorage.setItem('guestMode', 'true');
-        setIsGuest(true);
       }
       setLoading(false);
     };

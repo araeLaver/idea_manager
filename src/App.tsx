@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
@@ -14,15 +14,12 @@ import { History } from './pages/History';
 import { DailyMemos } from './pages/DailyMemos';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import LandingPage from './pages/LandingPage';
 
-function AppRoutes() {
+// Routes for authenticated users and guests
+function ProtectedRoutes() {
   return (
     <Routes>
-      {/* Auth routes - accessible anytime */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-
-      {/* Main routes - accessible to everyone */}
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="ideas" element={<IdeaList />} />
@@ -34,8 +31,37 @@ function AppRoutes() {
         <Route path="search" element={<SearchPage />} />
         <Route path="memos" element={<DailyMemos />} />
       </Route>
+      {/* Redirect any other path to dashboard */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+}
+
+// Routes for unauthenticated users
+function PublicRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      {/* Redirect any other path to the landing page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function AppRoutes() {
+  const { isAuthenticated, isGuest, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--bg-default)', color: 'var(--text-primary)' }}>
+        Loading application...
+      </div>
+    );
+  }
+
+  return isAuthenticated || isGuest ? <ProtectedRoutes /> : <PublicRoutes />;
 }
 
 function App() {
