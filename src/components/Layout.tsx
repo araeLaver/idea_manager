@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Lightbulb, LayoutGrid, Calendar, History, Search, Plus, User, LogOut, UserPlus, X, Moon, Sun, Menu, HelpCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tutorial } from './Tutorial';
 
 export function Layout() {
@@ -13,6 +13,18 @@ export function Layout() {
   const [showBanner, setShowBanner] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [runTutorial, setRunTutorial] = useState(false);
+
+  // 비회원 첫 진입 시 자동 튜토리얼 시작
+  useEffect(() => {
+    if (isGuest && location.pathname === '/') {
+      const shouldShowTutorial = localStorage.getItem('showTutorial');
+      if (shouldShowTutorial === 'true') {
+        localStorage.removeItem('showTutorial');
+        // 페이지 렌더링 후 튜토리얼 시작
+        setTimeout(() => setRunTutorial(true), 500);
+      }
+    }
+  }, [isGuest, location.pathname]);
 
   const navItems = [
     { path: '/', icon: Home, label: '대시보드', id: 'nav-dashboard' },
