@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Calendar, Trash2, Grid3X3, List, Eye, Plus, Lightbulb } from 'lucide-react';
-import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
+import { getStatusLabel, getStatusClass, getStatusGradient } from '../utils/labelMappings';
+import type { IdeaStatus } from '../types';
 
 export function IdeaList() {
   const { ideas, loading, deleteIdea } = useData();
@@ -15,8 +16,7 @@ export function IdeaList() {
     if (confirm('이 아이디어를 삭제하시겠습니까?')) {
       try {
         await deleteIdea(id);
-      } catch (error) {
-        console.error('Failed to delete idea:', error);
+      } catch {
         alert('아이디어 삭제에 실패했습니다.');
       }
     }
@@ -26,36 +26,6 @@ export function IdeaList() {
     if (filter === 'all') return true;
     return idea.status === filter;
   });
-
-  const getStatusLabel = (status: Idea['status']) => {
-    const labels: Record<string, string> = {
-      'draft': '초안',
-      'in-progress': '진행중',
-      'completed': '완료',
-      'archived': '보관됨',
-    };
-    return labels[status] || status;
-  };
-
-  const getStatusClass = (status: string) => {
-    const classes: Record<string, string> = {
-      'draft': 'status-draft',
-      'in-progress': 'status-in-progress',
-      'completed': 'status-completed',
-      'archived': 'status-archived',
-    };
-    return classes[status] || 'status-draft';
-  };
-
-  const getStatusGradient = (status: string) => {
-    const gradients: Record<string, string> = {
-      'draft': 'linear-gradient(135deg, #64748b 0%, #94a3b8 100%)',
-      'in-progress': 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
-      'completed': 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
-      'archived': 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
-    };
-    return gradients[status] || gradients.draft;
-  };
 
   const filterButtons = [
     { key: 'all', label: '전체', count: ideas.length },
@@ -165,7 +135,7 @@ export function IdeaList() {
               {/* Accent Bar */}
               <div
                 className="idea-card-accent"
-                style={{ background: getStatusGradient(idea.status) }}
+                style={{ background: getStatusGradient(idea.status as IdeaStatus) }}
               />
 
               {/* Header */}
@@ -209,8 +179,8 @@ export function IdeaList() {
 
               {/* Status & Category */}
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className={`badge ${getStatusClass(idea.status)}`}>
-                  {getStatusLabel(idea.status)}
+                <span className={`badge ${getStatusClass(idea.status as IdeaStatus)}`}>
+                  {getStatusLabel(idea.status as IdeaStatus)}
                 </span>
                 <span className="tag">{idea.category}</span>
               </div>
@@ -266,8 +236,8 @@ export function IdeaList() {
                     {idea.description}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`badge ${getStatusClass(idea.status)}`}>
-                      {getStatusLabel(idea.status)}
+                    <span className={`badge ${getStatusClass(idea.status as IdeaStatus)}`}>
+                      {getStatusLabel(idea.status as IdeaStatus)}
                     </span>
                     <span className="tag">{idea.category}</span>
                     {idea.tags.slice(0, 3).map((tag, tagIndex) => (

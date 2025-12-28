@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Tooltip } from '../components/Tooltip';
 import {
   Sparkles,
   Compass,
@@ -12,15 +14,56 @@ import {
   Zap,
   ArrowRight,
   CheckCircle2,
-  User
+  User,
+  Eye,
+  MousePointer,
+  Info,
+  ChevronLeft,
+  ChevronRight,
+  Monitor,
+  Kanban,
+  FileText,
+  BarChart3,
 } from 'lucide-react';
+
+/** Preview screenshot data */
+const previewScreens = [
+  {
+    id: 'dashboard',
+    title: '대시보드',
+    description: '한눈에 보는 아이디어 현황과 통계',
+    icon: BarChart3,
+    features: ['전체 아이디어 통계', '최근 활동 내역', '진행 상태 요약', '빠른 액세스 메뉴'],
+  },
+  {
+    id: 'ideas',
+    title: '아이디어 목록',
+    description: '체계적인 아이디어 관리와 필터링',
+    icon: Lightbulb,
+    features: ['카드/목록 뷰 전환', '상태별 필터링', '태그 기반 분류', '빠른 검색'],
+  },
+  {
+    id: 'kanban',
+    title: '칸반 보드',
+    description: '드래그 앤 드롭으로 진행 관리',
+    icon: Kanban,
+    features: ['직관적인 드래그 앤 드롭', '상태별 컬럼 정리', '실시간 업데이트', '시각적 진행 추적'],
+  },
+  {
+    id: 'memos',
+    title: '데일리 메모',
+    description: '매일의 아이디어와 영감 기록',
+    icon: FileText,
+    features: ['캘린더 기반 메모', '날짜별 기록 관리', '마크다운 지원', '아이디어 연결'],
+  },
+];
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { continueAsGuest } = useAuth();
+  const [currentPreview, setCurrentPreview] = useState(0);
 
   const handleGuestLogin = () => {
-    // 튜토리얼 플래그 설정 후 게스트 모드 진입
     localStorage.setItem('showTutorial', 'true');
     continueAsGuest();
     navigate('/');
@@ -64,6 +107,35 @@ const LandingPage = () => {
     { value: 'AI', label: '피드백 지원' },
     { value: '실시간', label: '클라우드 동기화' },
   ];
+
+  const guestTooltipContent = (
+    <div>
+      <div style={{ fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Eye size={16} style={{ color: 'var(--color-primary-500)' }} />
+        비회원 둘러보기
+      </div>
+      <ul style={{ margin: 0, paddingLeft: '16px', color: 'var(--text-secondary)' }}>
+        <li>회원가입 없이 모든 기능 체험</li>
+        <li>샘플 데이터로 기능 미리보기</li>
+        <li>로컬 저장으로 데이터 보관</li>
+        <li>언제든지 회원가입 가능</li>
+      </ul>
+      <div style={{ marginTop: '10px', padding: '8px', backgroundColor: 'var(--bg-subtle)', borderRadius: '8px', fontSize: '0.8125rem' }}>
+        <Info size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+        게스트 모드의 데이터는 브라우저에만 저장됩니다
+      </div>
+    </div>
+  );
+
+  const nextPreview = () => {
+    setCurrentPreview((prev) => (prev + 1) % previewScreens.length);
+  };
+
+  const prevPreview = () => {
+    setCurrentPreview((prev) => (prev - 1 + previewScreens.length) % previewScreens.length);
+  };
+
+  const CurrentIcon = previewScreens[currentPreview].icon;
 
   return (
     <div style={styles.container}>
@@ -121,14 +193,16 @@ const LandingPage = () => {
 
           {/* CTA Buttons */}
           <div style={styles.ctaContainer}>
-            <button
-              style={styles.primaryCta}
-              onClick={handleGuestLogin}
-            >
-              <Compass size={20} />
-              <span>체험하기</span>
-              <ArrowRight size={18} />
-            </button>
+            <Tooltip content={guestTooltipContent} position="bottom" delay={100}>
+              <button
+                style={styles.primaryCta}
+                onClick={handleGuestLogin}
+              >
+                <Compass size={20} />
+                <span>비회원 둘러보기</span>
+                <ArrowRight size={18} />
+              </button>
+            </Tooltip>
             <button
               style={styles.secondaryCta}
               onClick={() => navigate('/register')}
@@ -140,8 +214,99 @@ const LandingPage = () => {
 
           <p style={styles.ctaNote}>
             <CheckCircle2 size={14} />
-            <span>비회원도 모든 기능을 체험할 수 있습니다</span>
+            <span>회원가입 없이도 모든 기능을 체험할 수 있습니다</span>
           </p>
+
+          {/* Mouse hint for tooltip */}
+          <div style={styles.tooltipHint}>
+            <MousePointer size={14} />
+            <span>버튼 위에 마우스를 올려 자세한 정보를 확인하세요</span>
+          </div>
+        </div>
+      </section>
+
+      {/* App Preview Section */}
+      <section style={styles.previewSection}>
+        <div style={styles.sectionContent}>
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>
+              <Monitor size={28} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
+              앱 미리보기
+            </h2>
+            <p style={styles.sectionSubtitle}>
+              회원가입 전에 주요 기능을 살펴보세요
+            </p>
+          </div>
+
+          <div style={styles.previewContainer}>
+            {/* Preview Navigation */}
+            <button style={styles.previewNavBtn} onClick={prevPreview}>
+              <ChevronLeft size={24} />
+            </button>
+
+            {/* Preview Card */}
+            <div style={styles.previewCard}>
+              <div style={styles.previewHeader}>
+                <div style={styles.previewIconContainer}>
+                  <CurrentIcon size={32} color="white" />
+                </div>
+                <div>
+                  <h3 style={styles.previewTitle}>{previewScreens[currentPreview].title}</h3>
+                  <p style={styles.previewDescription}>{previewScreens[currentPreview].description}</p>
+                </div>
+              </div>
+
+              <div style={styles.previewContent}>
+                <div style={styles.mockScreen}>
+                  <div style={styles.mockHeader}>
+                    <div style={styles.mockDots}>
+                      <span style={{ ...styles.mockDot, backgroundColor: '#ff5f57' }} />
+                      <span style={{ ...styles.mockDot, backgroundColor: '#ffbd2e' }} />
+                      <span style={{ ...styles.mockDot, backgroundColor: '#28c840' }} />
+                    </div>
+                    <span style={styles.mockTitle}>{previewScreens[currentPreview].title}</span>
+                  </div>
+                  <div style={styles.mockBody}>
+                    {previewScreens[currentPreview].features.map((feature, idx) => (
+                      <div key={idx} style={styles.mockFeature}>
+                        <CheckCircle2 size={16} style={{ color: 'var(--color-primary-500)', flexShrink: 0 }} />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview Dots */}
+              <div style={styles.previewDots}>
+                {previewScreens.map((_, idx) => (
+                  <button
+                    key={idx}
+                    style={{
+                      ...styles.previewDot,
+                      backgroundColor: idx === currentPreview ? 'var(--color-primary-500)' : 'var(--border-default)',
+                    }}
+                    onClick={() => setCurrentPreview(idx)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <button style={styles.previewNavBtn} onClick={nextPreview}>
+              <ChevronRight size={24} />
+            </button>
+          </div>
+
+          {/* Try Now Button */}
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <Tooltip content={guestTooltipContent} position="top" delay={100}>
+              <button style={styles.tryNowBtn} onClick={handleGuestLogin}>
+                <Eye size={20} />
+                <span>지금 바로 체험하기</span>
+                <ArrowRight size={18} />
+              </button>
+            </Tooltip>
+          </div>
         </div>
       </section>
 
@@ -211,13 +376,15 @@ const LandingPage = () => {
             회원가입 없이도 모든 기능을 체험할 수 있습니다
           </p>
           <div style={styles.finalCtaButtons}>
-            <button
-              style={styles.finalPrimaryCta}
-              onClick={handleGuestLogin}
-            >
-              <Compass size={20} />
-              <span>둘러보기 시작</span>
-            </button>
+            <Tooltip content={guestTooltipContent} position="top" delay={100}>
+              <button
+                style={styles.finalPrimaryCta}
+                onClick={handleGuestLogin}
+              >
+                <Compass size={20} />
+                <span>비회원 둘러보기</span>
+              </button>
+            </Tooltip>
             <button
               style={styles.finalSecondaryCta}
               onClick={() => navigate('/login')}
@@ -397,6 +564,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '12px',
     cursor: 'pointer',
     transition: 'all 0.2s',
+    boxShadow: '0 4px 14px rgba(var(--color-primary-rgb), 0.4)',
   },
   secondaryCta: {
     display: 'flex',
@@ -419,6 +587,150 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '0.5rem',
     fontSize: '0.875rem',
     color: 'var(--text-tertiary)',
+  },
+  tooltipHint: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    fontSize: '0.75rem',
+    color: 'var(--text-tertiary)',
+    marginTop: '1rem',
+    opacity: 0.7,
+  },
+  // Preview Section
+  previewSection: {
+    padding: '4rem 0',
+    backgroundColor: 'var(--bg-default)',
+  },
+  previewContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1rem',
+    maxWidth: '900px',
+    margin: '0 auto',
+  },
+  previewNavBtn: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    border: '1px solid var(--border-default)',
+    backgroundColor: 'var(--bg-surface)',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
+    flexShrink: 0,
+  },
+  previewCard: {
+    flex: 1,
+    maxWidth: '700px',
+    backgroundColor: 'var(--bg-surface)',
+    borderRadius: '20px',
+    border: '1px solid var(--border-default)',
+    padding: '2rem',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  },
+  previewHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    marginBottom: '1.5rem',
+  },
+  previewIconContainer: {
+    width: '64px',
+    height: '64px',
+    borderRadius: '16px',
+    background: 'var(--gradient-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  previewTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 700,
+    color: 'var(--text-bright)',
+    marginBottom: '0.25rem',
+  },
+  previewDescription: {
+    fontSize: '1rem',
+    color: 'var(--text-secondary)',
+  },
+  previewContent: {
+    marginBottom: '1.5rem',
+  },
+  mockScreen: {
+    backgroundColor: 'var(--bg-subtle)',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '1px solid var(--border-subtle)',
+  },
+  mockHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    padding: '0.75rem 1rem',
+    backgroundColor: 'var(--bg-default)',
+    borderBottom: '1px solid var(--border-subtle)',
+  },
+  mockDots: {
+    display: 'flex',
+    gap: '6px',
+  },
+  mockDot: {
+    width: '12px',
+    height: '12px',
+    borderRadius: '50%',
+  },
+  mockTitle: {
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+  },
+  mockBody: {
+    padding: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '1rem',
+  },
+  mockFeature: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    fontSize: '0.9375rem',
+    color: 'var(--text-primary)',
+  },
+  previewDots: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '8px',
+  },
+  previewDot: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+  },
+  tryNowBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '1rem 2rem',
+    fontSize: '1rem',
+    fontWeight: 600,
+    color: 'white',
+    backgroundColor: 'var(--color-primary-500)',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 14px rgba(var(--color-primary-rgb), 0.4)',
   },
   // Features Section
   featuresSection: {

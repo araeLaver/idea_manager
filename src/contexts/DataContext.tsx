@@ -1,20 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { Idea, IdeaFormData } from '../types';
+import type { Idea, IdeaFormData, Stats } from '../types';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
-
-interface Stats {
-  total: number;
-  completed: number;
-  inProgress: number;
-  draft: number;
-  archived: number;
-  highPriority: number;
-  completionRate: number;
-  topCategories: { category: string; count: number }[];
-  topTags: { tag: string; count: number }[];
-}
 
 interface DataContextType {
   ideas: Idea[];
@@ -53,7 +41,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setIdeas(fetchedIdeas);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch ideas');
-      console.error('Error fetching ideas:', err);
     } finally {
       setLoading(false);
     }
@@ -68,8 +55,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedStats = await api.getStats();
       setStats(fetchedStats);
-    } catch (err) {
-      console.error('Error fetching stats:', err);
+    } catch {
+      // Stats fetch failed silently - non-critical
     }
   }, [isAuthenticated]);
 

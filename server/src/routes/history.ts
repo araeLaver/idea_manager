@@ -1,15 +1,24 @@
 import { Router, Response } from 'express';
 import { query } from '../database';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { createLogger } from '../utils/logger';
 
+const log = createLogger('history');
 const router = Router();
+
+// Validation constants
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 50;
+const DEFAULT_OFFSET = 0;
 
 router.use(authMiddleware);
 
 // Get all history for user
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
-    const { limit = 50, offset = 0 } = req.query;
+    // Parse and validate pagination parameters
+    const limitNum = Math.min(MAX_LIMIT, Math.max(1, parseInt(req.query.limit as string) || DEFAULT_LIMIT));
+    const offsetNum = Math.max(0, parseInt(req.query.offset as string) || DEFAULT_OFFSET);
 
     const result = await query(
       `SELECT h.*, i.title as idea_title
@@ -18,7 +27,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
        WHERE h.user_id = $1
        ORDER BY h.changed_at DESC
        LIMIT $2 OFFSET $3`,
-      [req.userId, limit, offset]
+      [req.userId, limitNum, offsetNum]
     );
 
     const history = result.rows.map(row => ({
@@ -31,9 +40,9 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       changedAt: row.changed_at
     }));
 
-    res.json(history);
+    res.json({ data: history });
   } catch (error) {
-    console.error('Get history error:', error);
+    log.error({ error }, 'Get history error');
     res.status(500).json({ error: 'Failed to get history' });
   }
 });
@@ -57,9 +66,9 @@ router.get('/idea/:ideaId', async (req: AuthRequest, res: Response) => {
       changedAt: row.changed_at
     }));
 
-    res.json(history);
+    res.json({ data: history });
   } catch (error) {
-    console.error('Get idea history error:', error);
+    log.error({ error, ideaId: req.params.ideaId }, 'Get idea history error');
     res.status(500).json({ error: 'Failed to get idea history' });
   }
 });
@@ -79,13 +88,15 @@ router.get('/recent', async (req: AuthRequest, res: Response) => {
       [req.userId]
     );
 
-    res.json(result.rows.map(row => ({
-      date: row.date,
-      action: row.action,
-      count: parseInt(row.count)
-    })));
+    res.json({
+      data: result.rows.map(row => ({
+        date: row.date,
+        action: row.action,
+        count: parseInt(row.count)
+      }))
+    });
   } catch (error) {
-    console.error('Get recent activity error:', error);
+    log.error({ error }, 'Get recent activity error');
     res.status(500).json({ error: 'Failed to get recent activity' });
   }
 });

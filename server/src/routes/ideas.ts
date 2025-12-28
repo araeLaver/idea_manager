@@ -1,8 +1,58 @@
 import { Router, Response } from 'express';
-import { query } from '../database';
+import { query, withTransaction, txQuery } from '../database';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('ideas');
 
 const router = Router();
+
+// Validation constants
+const MAX_TITLE_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 10000;
+const MAX_CATEGORY_LENGTH = 100;
+const MAX_TEXT_FIELD_LENGTH = 5000;
+const MAX_TAGS_COUNT = 20;
+const MAX_TAG_LENGTH = 50;
+const VALID_STATUSES = ['draft', 'in-progress', 'completed', 'archived'];
+const VALID_PRIORITIES = ['low', 'medium', 'high'];
+
+// Validation helper
+const validateIdeaInput = (body: Record<string, unknown>): { valid: boolean; error?: string } => {
+  const { title, description, category, tags, status, priority, notes, targetMarket, potentialRevenue, resources, timeline } = body;
+
+  if (title && (typeof title !== 'string' || title.length > MAX_TITLE_LENGTH)) {
+    return { valid: false, error: `Title must be ${MAX_TITLE_LENGTH} characters or less` };
+  }
+  if (description && (typeof description !== 'string' || description.length > MAX_DESCRIPTION_LENGTH)) {
+    return { valid: false, error: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less` };
+  }
+  if (category && (typeof category !== 'string' || category.length > MAX_CATEGORY_LENGTH)) {
+    return { valid: false, error: `Category must be ${MAX_CATEGORY_LENGTH} characters or less` };
+  }
+  if (tags) {
+    if (!Array.isArray(tags) || tags.length > MAX_TAGS_COUNT) {
+      return { valid: false, error: `Tags must be an array with max ${MAX_TAGS_COUNT} items` };
+    }
+    if (tags.some(tag => typeof tag !== 'string' || tag.length > MAX_TAG_LENGTH)) {
+      return { valid: false, error: `Each tag must be ${MAX_TAG_LENGTH} characters or less` };
+    }
+  }
+  if (status && !VALID_STATUSES.includes(status as string)) {
+    return { valid: false, error: `Status must be one of: ${VALID_STATUSES.join(', ')}` };
+  }
+  if (priority && !VALID_PRIORITIES.includes(priority as string)) {
+    return { valid: false, error: `Priority must be one of: ${VALID_PRIORITIES.join(', ')}` };
+  }
+  // Check text field lengths
+  const textFields = { notes, targetMarket, potentialRevenue, resources, timeline };
+  for (const [field, value] of Object.entries(textFields)) {
+    if (value && (typeof value !== 'string' || value.length > MAX_TEXT_FIELD_LENGTH)) {
+      return { valid: false, error: `${field} must be ${MAX_TEXT_FIELD_LENGTH} characters or less` };
+    }
+  }
+  return { valid: true };
+};
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
@@ -120,7 +170,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Get ideas error:', error);
+    log.error({ error }, 'Get ideas error');
     res.status(500).json({ error: 'Failed to get ideas' });
   }
 });
@@ -139,7 +189,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 
     res.json(mapRowToIdea(result.rows[0]));
   } catch (error) {
-    console.error('Get idea error:', error);
+    log.error({ error, ideaId: req.params.id }, 'Get idea error');
     res.status(500).json({ error: 'Failed to get idea' });
   }
 });
@@ -163,6 +213,12 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
+    }
+
+    // Validate input
+    const validation = validateIdeaInput(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
     }
 
     const result = await query(
@@ -198,12 +254,12 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(mapRowToIdea(row));
   } catch (error) {
-    console.error('Create idea error:', error);
+    log.error({ error }, 'Create idea error');
     res.status(500).json({ error: 'Failed to create idea' });
   }
 });
 
-// Update idea
+// Update idea with transaction
 router.put('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const {
@@ -220,109 +276,127 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       timeline
     } = req.body;
 
-    // Get old values for history
-    const oldResult = await query(
-      'SELECT * FROM idea_manager.ideas WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.userId]
-    );
-
-    if (oldResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
+    // Validate input
+    const validation = validateIdeaInput(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
     }
 
-    const oldRow = oldResult.rows[0];
+    const updatedIdea = await withTransaction(async (client) => {
+      // Get old values for history
+      const oldResult = await txQuery(
+        client,
+        'SELECT * FROM idea_manager.ideas WHERE id = $1 AND user_id = $2 FOR UPDATE',
+        [req.params.id, req.userId]
+      );
 
-    const result = await query(
-      `UPDATE idea_manager.ideas SET
-        title = COALESCE($1, title),
-        description = COALESCE($2, description),
-        category = COALESCE($3, category),
-        tags = COALESCE($4, tags),
-        status = COALESCE($5, status),
-        priority = COALESCE($6, priority),
-        notes = COALESCE($7, notes),
-        target_market = COALESCE($8, target_market),
-        potential_revenue = COALESCE($9, potential_revenue),
-        resources = COALESCE($10, resources),
-        timeline = COALESCE($11, timeline)
-      WHERE id = $12 AND user_id = $13
-      RETURNING *`,
-      [
-        title,
-        description,
-        category,
-        tags,
-        status,
-        priority,
-        notes,
-        targetMarket,
-        potentialRevenue,
-        resources,
-        timeline,
-        req.params.id,
-        req.userId
-      ]
-    );
+      if (oldResult.rows.length === 0) {
+        throw { status: 404, message: 'Idea not found' };
+      }
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
+      const oldRow = oldResult.rows[0];
+
+      const result = await txQuery(
+        client,
+        `UPDATE idea_manager.ideas SET
+          title = COALESCE($1, title),
+          description = COALESCE($2, description),
+          category = COALESCE($3, category),
+          tags = COALESCE($4, tags),
+          status = COALESCE($5, status),
+          priority = COALESCE($6, priority),
+          notes = COALESCE($7, notes),
+          target_market = COALESCE($8, target_market),
+          potential_revenue = COALESCE($9, potential_revenue),
+          resources = COALESCE($10, resources),
+          timeline = COALESCE($11, timeline)
+        WHERE id = $12 AND user_id = $13
+        RETURNING *`,
+        [
+          title,
+          description,
+          category,
+          tags,
+          status,
+          priority,
+          notes,
+          targetMarket,
+          potentialRevenue,
+          resources,
+          timeline,
+          req.params.id,
+          req.userId
+        ]
+      );
+
+      const row = result.rows[0];
+
+      // Record history
+      const action = status && status !== oldRow.status ? 'status_changed' : 'updated';
+      await txQuery(
+        client,
+        `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, old_values, new_values)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          row.id,
+          req.userId,
+          action,
+          JSON.stringify({ title: oldRow.title, status: oldRow.status }),
+          JSON.stringify({ title: row.title, status: row.status })
+        ]
+      );
+
+      return mapRowToIdea(row);
+    });
+
+    res.json(updatedIdea);
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string };
+    if (err.status === 404) {
+      return res.status(404).json({ error: err.message });
     }
-
-    const row = result.rows[0];
-
-    // Record history
-    const action = status && status !== oldRow.status ? 'status_changed' : 'updated';
-    await query(
-      `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, old_values, new_values)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [
-        row.id,
-        req.userId,
-        action,
-        JSON.stringify({ title: oldRow.title, status: oldRow.status }),
-        JSON.stringify({ title: row.title, status: row.status })
-      ]
-    );
-
-    res.json(mapRowToIdea(row));
-  } catch (error) {
-    console.error('Update idea error:', error);
+    log.error({ error, ideaId: req.params.id }, 'Update idea error');
     res.status(500).json({ error: 'Failed to update idea' });
   }
 });
 
-// Delete idea
+// Delete idea with transaction
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
-    // Get idea info for history
-    const ideaResult = await query(
-      'SELECT title, status FROM idea_manager.ideas WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.userId]
-    );
+    await withTransaction(async (client) => {
+      // Get idea info for history
+      const ideaResult = await txQuery(
+        client,
+        'SELECT title, status FROM idea_manager.ideas WHERE id = $1 AND user_id = $2 FOR UPDATE',
+        [req.params.id, req.userId]
+      );
 
-    if (ideaResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
+      if (ideaResult.rows.length === 0) {
+        throw { status: 404, message: 'Idea not found' };
+      }
 
-    // Record history before deletion
-    await query(
-      `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, old_values)
-       VALUES ($1, $2, 'deleted', $3)`,
-      [req.params.id, req.userId, JSON.stringify(ideaResult.rows[0])]
-    );
+      // Record history before deletion (history will be cascade deleted, but we log it first)
+      await txQuery(
+        client,
+        `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, old_values)
+         VALUES ($1, $2, 'deleted', $3)`,
+        [req.params.id, req.userId, JSON.stringify(ideaResult.rows[0])]
+      );
 
-    const result = await query(
-      'DELETE FROM idea_manager.ideas WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
+      await txQuery(
+        client,
+        'DELETE FROM idea_manager.ideas WHERE id = $1 AND user_id = $2',
+        [req.params.id, req.userId]
+      );
+    });
 
     res.json({ message: 'Idea deleted successfully' });
-  } catch (error) {
-    console.error('Delete idea error:', error);
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string };
+    if (err.status === 404) {
+      return res.status(404).json({ error: err.message });
+    }
+    log.error({ error, ideaId: req.params.id }, 'Delete idea error');
     res.status(500).json({ error: 'Failed to delete idea' });
   }
 });
@@ -380,7 +454,7 @@ router.get('/stats/summary', async (req: AuthRequest, res: Response) => {
       topTags: top_tags.map((r: { tag: string; count: string }) => ({ tag: r.tag, count: parseInt(r.count) }))
     });
   } catch (error) {
-    console.error('Get stats error:', error);
+    log.error({ error }, 'Get stats error');
     res.status(500).json({ error: 'Failed to get statistics' });
   }
 });
@@ -403,7 +477,7 @@ router.patch('/bulk/status', async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'Status updated successfully' });
   } catch (error) {
-    console.error('Bulk update error:', error);
+    log.error({ error }, 'Bulk update error');
     res.status(500).json({ error: 'Failed to update status' });
   }
 });

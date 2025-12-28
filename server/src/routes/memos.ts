@@ -1,8 +1,31 @@
 import { Router, Response } from 'express';
 import { query } from '../database';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { createLogger } from '../utils/logger';
 
+const log = createLogger('memos');
 const router = Router();
+
+// Validation constants
+const MAX_CONTENT_LENGTH = 65535;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+// Validation helper functions
+const isValidMonth = (month: unknown): boolean => {
+  const m = parseInt(month as string);
+  return !isNaN(m) && m >= 1 && m <= 12;
+};
+
+const isValidYear = (year: unknown): boolean => {
+  const y = parseInt(year as string);
+  return !isNaN(y) && y >= 2000 && y <= 2100;
+};
+
+const isValidDate = (date: string): boolean => {
+  if (!DATE_REGEX.test(date)) return false;
+  const d = new Date(date);
+  return !isNaN(d.getTime());
+};
 
 router.use(authMiddleware);
 
@@ -15,8 +38,12 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     const params: unknown[] = [req.userId];
 
     if (month && year) {
+      // Validate month and year
+      if (!isValidMonth(month) || !isValidYear(year)) {
+        return res.status(400).json({ error: 'Invalid month or year parameter' });
+      }
       sql += ' AND EXTRACT(MONTH FROM date) = $2 AND EXTRACT(YEAR FROM date) = $3';
-      params.push(month, year);
+      params.push(parseInt(month as string), parseInt(year as string));
     }
 
     sql += ' ORDER BY date DESC';
@@ -31,9 +58,9 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       updatedAt: row.updated_at
     }));
 
-    res.json(memos);
+    res.json({ data: memos });
   } catch (error) {
-    console.error('Get memos error:', error);
+    log.error({ error }, 'Get memos error');
     res.status(500).json({ error: 'Failed to get memos' });
   }
 });
@@ -59,7 +86,7 @@ router.get('/date/:date', async (req: AuthRequest, res: Response) => {
       updatedAt: row.updated_at
     });
   } catch (error) {
-    console.error('Get memo by date error:', error);
+    log.error({ error, date: req.params.date }, 'Get memo by date error');
     res.status(500).json({ error: 'Failed to get memo' });
   }
 });
@@ -71,6 +98,16 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
     if (!date || !content) {
       return res.status(400).json({ error: 'Date and content are required' });
+    }
+
+    // Validate date format
+    if (!isValidDate(date)) {
+      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    // Validate content length
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return res.status(400).json({ error: `Content exceeds maximum length of ${MAX_CONTENT_LENGTH} characters` });
     }
 
     // Upsert memo
@@ -92,7 +129,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       updatedAt: row.updated_at
     });
   } catch (error) {
-    console.error('Create memo error:', error);
+    log.error({ error }, 'Create memo error');
     res.status(500).json({ error: 'Failed to save memo' });
   }
 });
@@ -111,7 +148,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'Memo deleted successfully' });
   } catch (error) {
-    console.error('Delete memo error:', error);
+    log.error({ error, memoId: req.params.id }, 'Delete memo error');
     res.status(500).json({ error: 'Failed to delete memo' });
   }
 });
@@ -130,7 +167,7 @@ router.delete('/date/:date', async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'Memo deleted successfully' });
   } catch (error) {
-    console.error('Delete memo by date error:', error);
+    log.error({ error, date: req.params.date }, 'Delete memo by date error');
     res.status(500).json({ error: 'Failed to delete memo' });
   }
 });

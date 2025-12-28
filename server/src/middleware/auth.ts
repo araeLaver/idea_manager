@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { isTokenBlacklisted } from '../database';
 
 export interface AuthRequest extends Request {
   userId?: string;
+  token?: string;
 }
 
 const getJwtSecret = (): string => {
@@ -13,7 +15,7 @@ const getJwtSecret = (): string => {
   return secret;
 };
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -23,8 +25,15 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, getJwtSecret()) as { userId: string };
+    // Check if token is blacklisted
+    const blacklisted = await isTokenBlacklisted(token);
+    if (blacklisted) {
+      return res.status(401).json({ error: 'Token has been revoked' });
+    }
+
+    const decoded = jwt.verify(token, getJwtSecret()) as { userId: string; exp: number };
     req.userId = decoded.userId;
+    req.token = token;
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid token' });

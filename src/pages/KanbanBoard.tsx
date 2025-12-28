@@ -187,8 +187,7 @@ export function KanbanBoard() {
     if (confirm('이 아이디어를 삭제하시겠습니까?')) {
       try {
         await deleteIdea(id);
-      } catch (error) {
-        console.error('Failed to delete idea:', error);
+      } catch {
         alert('아이디어 삭제에 실패했습니다.');
       }
     }
@@ -217,7 +216,9 @@ export function KanbanBoard() {
     }
 
     if (newStatus !== activeIdea.status) {
-      updateIdea(active.id as string, { status: newStatus }).catch(console.error);
+      updateIdea(active.id as string, { status: newStatus }).catch(() => {
+        alert('상태 변경에 실패했습니다.');
+      });
     }
   };
 

@@ -1,6 +1,10 @@
-// AI 서비스 - 무료 로컬 구현
-// 키워드 매칭과 패턴 분석을 통한 스마트 제안 시스템
+/**
+ * AI Service - Local implementation using keyword matching and pattern analysis.
+ * Provides smart suggestions for idea categorization, tagging, and generation.
+ * @module aiService
+ */
 
+/** Suggested idea structure from AI generation */
 interface IdeaSuggestion {
   title: string;
   description: string;
@@ -9,11 +13,14 @@ interface IdeaSuggestion {
   priority: 'low' | 'medium' | 'high';
 }
 
+/** Category prediction result with confidence score */
 interface CategoryPrediction {
   category: string;
+  /** Confidence score between 0 and 1 */
   confidence: number;
 }
 
+/** Tag suggestion result */
 interface TagSuggestion {
   tags: string[];
 }
@@ -68,8 +75,19 @@ const categoryKeywords = {
   "엔터테인먼트": ["게임", "영화", "음악", "콘텐츠", "미디어", "스트리밍", "SNS", "소셜미디어", "유튜브", "방송"]
 };
 
+/**
+ * AI service for intelligent idea analysis and suggestions.
+ * Uses local keyword matching algorithms for categorization and tagging.
+ */
 export const aiService = {
-  // 카테고리 자동 분류
+  /**
+   * Automatically categorize an idea based on title and description.
+   * Uses keyword matching against predefined category keywords.
+   * @param title - The idea title
+   * @param description - The idea description
+   * @returns Category prediction with confidence score (0-1)
+   * @throws Error if both title and description are empty
+   */
   async categorizeIdea(title: string, description: string): Promise<CategoryPrediction> {
     return new Promise((resolve, reject) => {
       // 입력 검증
@@ -117,7 +135,14 @@ export const aiService = {
     });
   },
 
-  // 태그 자동 제안
+  /**
+   * Suggest relevant tags based on idea title and description.
+   * Extracts keywords from text and matches against known tag patterns.
+   * @param title - The idea title
+   * @param description - The idea description
+   * @returns Suggested tags (maximum 5)
+   * @throws Error if both title and description are empty
+   */
   async suggestTags(title: string, description: string): Promise<TagSuggestion> {
     return new Promise((resolve, reject) => {
       // 입력 검증
@@ -165,7 +190,13 @@ export const aiService = {
     });
   },
 
-  // 아이디어 제안
+  /**
+   * Generate idea suggestions based on optional keyword and category filters.
+   * Returns shuffled results from the local idea database.
+   * @param keyword - Optional keyword to filter suggestions
+   * @param category - Optional category to filter suggestions
+   * @returns Array of suggested ideas (maximum 5)
+   */
   async generateIdeaSuggestions(keyword?: string, category?: string): Promise<IdeaSuggestion[]> {
     // 실제 환경에서는 OpenAI API 호출
     
@@ -185,12 +216,22 @@ export const aiService = {
       );
     }
     
-    // 랜덤하게 3-5개 선택
-    const shuffled = suggestions.sort(() => 0.5 - Math.random());
+    // Fisher-Yates 셔플 알고리즘으로 랜덤하게 섞기
+    const shuffled = [...suggestions];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
     return shuffled.slice(0, Math.min(5, shuffled.length));
   },
 
-  // 아이디어 개선 제안 (무료)
+  /**
+   * Analyze an idea and provide improvement suggestions.
+   * Checks for completeness and provides actionable recommendations.
+   * @param title - The idea title to analyze
+   * @param description - The idea description to analyze
+   * @returns Improvement suggestions and optionally improved title/description
+   */
   async improveIdea(title: string, description: string): Promise<{
     improvedTitle?: string;
     improvedDescription?: string;
@@ -230,8 +271,12 @@ export const aiService = {
     });
   },
 
-  // 로컬 AI 기능 사용 가능 여부 (항상 무료 사용 가능)
+  /**
+   * Check if the AI service is available.
+   * Always returns true as this is a local implementation.
+   * @returns true (always available)
+   */
   isAvailable(): boolean {
-    return true; // 로컬 구현이므로 항상 사용 가능
+    return true;
   }
 };

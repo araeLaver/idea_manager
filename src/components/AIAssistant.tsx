@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Bot, Lightbulb, Wand2, Sparkles, Loader2, ChevronRight } from 'lucide-react';
 import { aiService } from '../services/aiService';
 import { useData } from '../contexts/DataContext';
+import { getPriorityLabel, getPriorityColor } from '../utils/labelMappings';
+import type { IdeaPriority } from '../types';
 
 interface AISuggestion {
   title: string;
@@ -26,8 +28,8 @@ export function AIAssistant() {
     try {
       const results = await aiService.generateIdeaSuggestions(keyword, selectedCategory);
       setSuggestions(results);
-    } catch (error) {
-      console.error('AI 제안 생성 실패:', error);
+    } catch {
+      // Error handled silently - user can retry
     } finally {
       setLoading(false);
     }
@@ -44,27 +46,8 @@ export function AIAssistant() {
         tags: suggestion.tags,
       });
       alert('아이디어가 성공적으로 생성되었습니다!');
-    } catch (error) {
-      console.error('아이디어 생성 실패:', error);
+    } catch {
       alert('아이디어 생성에 실패했습니다.');
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-error bg-error-light';
-      case 'medium': return 'text-warning bg-warning-light';
-      case 'low': return 'text-gray-500 bg-gray-100';
-      default: return 'text-tertiary bg-secondary';
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'high': return '높음';
-      case 'medium': return '보통';
-      case 'low': return '낮음';
-      default: return priority;
     }
   };
 
@@ -174,8 +157,8 @@ export function AIAssistant() {
                               {suggestion.title}
                             </h4>
                             <div className="flex items-center gap-2 ml-3">
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPriorityColor(suggestion.priority)}`}>
-                                {getPriorityLabel(suggestion.priority)}
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPriorityColor(suggestion.priority as IdeaPriority)}`}>
+                                {getPriorityLabel(suggestion.priority as IdeaPriority)}
                               </span>
                               <span className="text-xs bg-secondary text-secondary px-2 py-1 rounded-full font-medium">
                                 {suggestion.category}

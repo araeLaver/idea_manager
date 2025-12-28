@@ -13,6 +13,24 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  // Password validation matching server requirements
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    if (pwd.length < 8) {
+      errors.push('8자 이상');
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      errors.push('대문자 포함');
+    }
+    if (!/[a-z]/.test(pwd)) {
+      errors.push('소문자 포함');
+    }
+    if (!/[0-9]/.test(pwd)) {
+      errors.push('숫자 포함');
+    }
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -22,8 +40,9 @@ export default function Register() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('비밀번호는 6자 이상이어야 합니다');
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) {
+      setError(`비밀번호 요구사항: ${passwordErrors.join(', ')}`);
       return;
     }
 
@@ -178,7 +197,7 @@ export default function Register() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="최소 6자 이상"
+                  placeholder="8자 이상, 대소문자+숫자"
                   style={{ paddingLeft: '2.75rem' }}
                 />
               </div>

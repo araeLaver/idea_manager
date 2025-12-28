@@ -20,13 +20,12 @@ export function AIFeatures({ title, description, onCategorySelect, onTagsSelect 
       alert('제목이나 설명을 먼저 입력해주세요.');
       return;
     }
-    
+
     setLoadingCategory(true);
     try {
       const prediction = await aiService.categorizeIdea(title, description);
       setCategoryPrediction(prediction);
-    } catch (error) {
-      console.error('카테고리 예측 실패:', error);
+    } catch {
       alert('카테고리 예측에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoadingCategory(false);
@@ -38,13 +37,12 @@ export function AIFeatures({ title, description, onCategorySelect, onTagsSelect 
       alert('제목이나 설명을 먼저 입력해주세요.');
       return;
     }
-    
+
     setLoadingTags(true);
     try {
       const suggestions = await aiService.suggestTags(title, description);
       setTagSuggestions(suggestions.tags);
-    } catch (error) {
-      console.error('태그 제안 실패:', error);
+    } catch {
       alert('태그 제안에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoadingTags(false);

@@ -24,13 +24,13 @@ export function DailyMemos() {
     try {
       setLoading(true);
       const fetchedMemos = await api.getMemos();
-      setMemos(fetchedMemos.map((m: any) => ({
+      setMemos(fetchedMemos.map((m: MemoEntry & { date: string | Date }) => ({
         id: m.id,
         date: typeof m.date === 'string' ? m.date.split('T')[0] : format(new Date(m.date), 'yyyy-MM-dd'),
         content: m.content
       })));
-    } catch (error) {
-      console.error('Failed to load memos:', error);
+    } catch {
+      // Error loading memos - will show empty state
     } finally {
       setLoading(false);
     }
@@ -51,8 +51,8 @@ export function DailyMemos() {
       setEditingDate(null);
       setEditMemo('');
       await loadMemos();
-    } catch (error) {
-      console.error('Failed to save memo:', error);
+    } catch {
+      alert('메모 저장에 실패했습니다.');
     }
   };
 
@@ -66,8 +66,8 @@ export function DailyMemos() {
       try {
         await api.deleteMemoByDate(date);
         await loadMemos();
-      } catch (error) {
-        console.error('Failed to delete memo:', error);
+      } catch {
+        alert('메모 삭제에 실패했습니다.');
       }
     }
   };

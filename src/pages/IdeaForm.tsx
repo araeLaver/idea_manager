@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import type { IdeaFormData, Idea } from '../types';
 import { useData } from '../contexts/DataContext';
 import { AIFeatures } from '../components/AIFeatures';
@@ -25,10 +25,10 @@ export function IdeaForm() {
     timeline: ''
   });
 
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('18:00');
+  const [scheduleStartDate, setScheduleStartDate] = useState('');
+  const [scheduleEndDate, setScheduleEndDate] = useState('');
+  const [scheduleStartTime, setScheduleStartTime] = useState('09:00');
+  const [scheduleEndTime, setScheduleEndTime] = useState('18:00');
   const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
@@ -64,8 +64,7 @@ export function IdeaForm() {
         await createIdea(formData);
       }
       navigate('/');
-    } catch (error) {
-      console.error('아이디어 저장 실패:', error);
+    } catch {
       alert('아이디어 저장에 실패했습니다.');
     }
   };
@@ -99,14 +98,14 @@ export function IdeaForm() {
   };
 
   const updateTimeline = () => {
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+    if (scheduleStartDate && scheduleEndDate) {
+      const start = new Date(scheduleStartDate);
+      const end = new Date(scheduleEndDate);
       const diffTime = Math.abs(end.getTime() - start.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const startDateStr = start.toLocaleDateString('ko-KR');
       const endDateStr = end.toLocaleDateString('ko-KR');
-      const timelineText = `${startDateStr} ~ ${endDateStr} (${diffDays}일간, ${startTime} - ${endTime})`;
+      const timelineText = `${startDateStr} ~ ${endDateStr} (${diffDays}일간, ${scheduleStartTime} - ${scheduleEndTime})`;
       setFormData(prev => ({ ...prev, timeline: timelineText }));
     }
   };
@@ -279,25 +278,25 @@ export function IdeaForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium mb-1.5 flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
-                  <Calendar className="w-3 h-3" />
+                  <CalendarIcon className="w-3 h-3" />
                   시작일
                 </label>
                 <input
                   type="date"
-                  value={startDate}
-                  onChange={(e) => { setStartDate(e.target.value); updateTimeline(); }}
+                  value={scheduleStartDate}
+                  onChange={(e) => { setScheduleStartDate(e.target.value); updateTimeline(); }}
                 />
               </div>
               <div>
                 <label className="text-xs font-medium mb-1.5 flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
-                  <Calendar className="w-3 h-3" />
+                  <CalendarIcon className="w-3 h-3" />
                   종료일 (예상)
                 </label>
                 <input
                   type="date"
-                  value={endDate}
-                  onChange={(e) => { setEndDate(e.target.value); updateTimeline(); }}
-                  min={startDate}
+                  value={scheduleEndDate}
+                  onChange={(e) => { setScheduleEndDate(e.target.value); updateTimeline(); }}
+                  min={scheduleStartDate}
                 />
               </div>
               <div>
@@ -306,8 +305,8 @@ export function IdeaForm() {
                   작업 시작 시간
                 </label>
                 <select
-                  value={startTime}
-                  onChange={(e) => { setStartTime(e.target.value); updateTimeline(); }}
+                  value={scheduleStartTime}
+                  onChange={(e) => { setScheduleStartTime(e.target.value); updateTimeline(); }}
                 >
                   {Array.from({ length: 24 }, (_, i) => {
                     const hour = i.toString().padStart(2, '0');
@@ -321,8 +320,8 @@ export function IdeaForm() {
                   작업 종료 시간
                 </label>
                 <select
-                  value={endTime}
-                  onChange={(e) => { setEndTime(e.target.value); updateTimeline(); }}
+                  value={scheduleEndTime}
+                  onChange={(e) => { setScheduleEndTime(e.target.value); updateTimeline(); }}
                 >
                   {Array.from({ length: 24 }, (_, i) => {
                     const hour = i.toString().padStart(2, '0');
