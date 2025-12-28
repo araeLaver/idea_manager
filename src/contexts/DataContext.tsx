@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react';
 import type { Idea, IdeaFormData, Stats } from '../types';
 import api from '../services/api';
+import { guestStorage } from '../services/guestStorage';
 import { useAuth } from './AuthContext';
 
 interface DataContextType {
@@ -22,13 +23,33 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isGuest } = useAuth();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
 
+  // Initialize guest data when entering guest mode
+  useEffect(() => {
+    if (isGuest && !guestStorage.isInitialized()) {
+      guestStorage.initialize();
+    }
+  }, [isGuest]);
+
   const refreshIdeas = useCallback(async () => {
+    // Handle guest mode
+    if (isGuest) {
+      setLoading(true);
+      try {
+        const guestIdeas = guestStorage.getIdeas();
+        setIdeas(guestIdeas);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Handle authenticated mode
     if (!isAuthenticated) {
       setIdeas([]);
       return;
@@ -44,9 +65,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isGuest]);
 
   const refreshStats = useCallback(async () => {
+    // Handle guest mode
+    if (isGuest) {
+      const guestStats = guestStorage.getStats();
+      setStats(guestStats);
+      return;
+    }
+
+    // Handle authenticated mode
     if (!isAuthenticated) {
       setStats(null);
       return;
@@ -58,9 +87,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch {
       // Stats fetch failed silently - non-critical
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isGuest]);
 
   const createIdea = async (ideaData: IdeaFormData): Promise<Idea> => {
+    // Handle guest mode
+    if (isGuest) {
+      const newIdea = guestStorage.createIdea(ideaData);
+      await refreshIdeas();
+      await refreshStats();
+      return newIdea;
+    }
+
+    // Handle authenticated mode
     try {
       const newIdea = await api.createIdea(ideaData);
       await refreshIdeas();
@@ -73,6 +111,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateIdea = async (id: string, ideaData: Partial<IdeaFormData>): Promise<void> => {
+    // Handle guest mode
+    if (isGuest) {
+      const updated = guestStorage.updateIdea(id, ideaData);
+      if (!updated) throw new Error('Idea not found');
+      await refreshIdeas();
+      await refreshStats();
+      return;
+    }
+
+    // Handle authenticated mode
     try {
       await api.updateIdea(id, ideaData);
       await refreshIdeas();
@@ -84,6 +132,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteIdea = async (id: string): Promise<void> => {
+    // Handle guest mode
+    if (isGuest) {
+      const deleted = guestStorage.deleteIdea(id);
+      if (!deleted) throw new Error('Idea not found');
+      await refreshIdeas();
+      await refreshStats();
+      return;
+    }
+
+    // Handle authenticated mode
     try {
       await api.deleteIdea(id);
       await refreshIdeas();
@@ -95,6 +153,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const getIdea = async (id: string): Promise<Idea | null> => {
+    // Handle guest mode
+    if (isGuest) {
+      return guestStorage.getIdea(id);
+    }
+
+    // Handle authenticated mode
     try {
       return await api.getIdea(id);
     } catch (err) {
@@ -104,6 +168,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const searchIdeas = async (query: string): Promise<Idea[]> => {
+    // Handle guest mode
+    if (isGuest) {
+      return guestStorage.searchIdeas(query);
+    }
+
+    // Handle authenticated mode
     try {
       return await api.getAllIdeas({ search: query });
     } catch (err) {
@@ -113,6 +183,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const filterIdeas = async (filters: { status?: string; category?: string; priority?: string }): Promise<Idea[]> => {
+    // Handle guest mode
+    if (isGuest) {
+      return guestStorage.filterIdeas(filters);
+    }
+
+    // Handle authenticated mode
     try {
       return await api.getAllIdeas(filters);
     } catch (err) {
@@ -122,14 +198,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated || isGuest) {
       refreshIdeas();
       refreshStats();
     } else {
       setIdeas([]);
       setStats(null);
     }
-  }, [isAuthenticated, refreshIdeas, refreshStats]);
+  }, [isAuthenticated, isGuest, refreshIdeas, refreshStats]);
 
   const value: DataContextType = {
     ideas,

@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Calendar, Edit3, Save, Trash2, Plus, X } from 'lucide-react';
 import api from '../services/api';
+import { guestStorage } from '../services/guestStorage';
+import { useAuth } from '../contexts/AuthContext';
 
 interface MemoEntry {
   id: string;
@@ -11,30 +13,43 @@ interface MemoEntry {
 }
 
 export function DailyMemos() {
+  const { isGuest } = useAuth();
   const [memos, setMemos] = useState<MemoEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editMemo, setEditMemo] = useState('');
 
-  useEffect(() => {
-    loadMemos();
-  }, []);
-
-  const loadMemos = async () => {
+  const loadMemos = useCallback(async () => {
     try {
       setLoading(true);
-      const fetchedMemos = await api.getMemos();
-      setMemos(fetchedMemos.map((m: MemoEntry & { date: string | Date }) => ({
-        id: m.id,
-        date: typeof m.date === 'string' ? m.date.split('T')[0] : format(new Date(m.date), 'yyyy-MM-dd'),
-        content: m.content
-      })));
+
+      if (isGuest) {
+        // Load from guest storage
+        const guestMemos = guestStorage.getMemos();
+        setMemos(guestMemos.map((m) => ({
+          id: m.id,
+          date: typeof m.date === 'string' ? m.date.split('T')[0] : format(new Date(m.date), 'yyyy-MM-dd'),
+          content: m.content
+        })));
+      } else {
+        // Load from API
+        const fetchedMemos = await api.getMemos();
+        setMemos(fetchedMemos.map((m: MemoEntry & { date: string | Date }) => ({
+          id: m.id,
+          date: typeof m.date === 'string' ? m.date.split('T')[0] : format(new Date(m.date), 'yyyy-MM-dd'),
+          content: m.content
+        })));
+      }
     } catch {
       // Error loading memos - will show empty state
     } finally {
       setLoading(false);
     }
-  };
+  }, [isGuest]);
+
+  useEffect(() => {
+    loadMemos();
+  }, [loadMemos]);
 
   const handleEdit = (date: string, content: string) => {
     setEditingDate(date);
@@ -43,10 +58,20 @@ export function DailyMemos() {
 
   const handleSave = async (date: string) => {
     try {
-      if (editMemo.trim()) {
-        await api.saveMemo(date, editMemo);
+      if (isGuest) {
+        // Save to guest storage
+        if (editMemo.trim()) {
+          guestStorage.saveMemo(date, editMemo);
+        } else {
+          guestStorage.deleteMemoByDate(date);
+        }
       } else {
-        await api.deleteMemoByDate(date);
+        // Save to API
+        if (editMemo.trim()) {
+          await api.saveMemo(date, editMemo);
+        } else {
+          await api.deleteMemoByDate(date);
+        }
       }
       setEditingDate(null);
       setEditMemo('');
@@ -64,7 +89,11 @@ export function DailyMemos() {
   const handleDelete = async (date: string) => {
     if (confirm('이 메모를 삭제하시겠습니까?')) {
       try {
-        await api.deleteMemoByDate(date);
+        if (isGuest) {
+          guestStorage.deleteMemoByDate(date);
+        } else {
+          await api.deleteMemoByDate(date);
+        }
         await loadMemos();
       } catch {
         alert('메모 삭제에 실패했습니다.');
@@ -107,9 +136,13 @@ export function DailyMemos() {
               <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 일일 메모
               </h1>
+              {isGuest && (
+                <span className="badge badge-warning text-xs">게스트 모드</span>
+              )}
             </div>
             <p className="text-sm ml-12" style={{ color: 'var(--text-secondary)' }}>
               매일의 기록을 관리하세요
+              {isGuest && ' (브라우저에 저장됩니다)'}
             </p>
           </div>
           <button onClick={addNewMemo} className="btn btn-primary">
