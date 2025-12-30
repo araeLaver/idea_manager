@@ -173,6 +173,16 @@ export function Layout() {
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
+              ) : isGuest ? (
+                <button
+                  onClick={logout}
+                  className="btn btn-secondary hidden sm:flex"
+                  style={{ padding: 'var(--space-2) var(--space-4)' }}
+                  title="게스트 모드를 종료하고 메인 페이지로 이동합니다"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>게스트 종료</span>
+                </button>
               ) : (
                 <button
                   onClick={() => navigate('/login')}
@@ -249,6 +259,17 @@ export function Layout() {
                       <span>로그아웃</span>
                     </button>
                   </div>
+                ) : isGuest ? (
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="btn btn-secondary w-full"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>게스트 종료</span>
+                  </button>
                 ) : (
                   <button
                     onClick={() => {
