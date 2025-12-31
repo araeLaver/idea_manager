@@ -337,6 +337,33 @@ class ApiService {
     const response = await this.request<DataResponse<IdeaHistory[]>>('/history/recent');
     return response.data;
   }
+
+  /** Migrate guest data (ideas and memos) to the authenticated user's account */
+  async migrateGuestData(ideas: IdeaFormData[], memos: { date: string; content: string }[]): Promise<{ ideas: number; memos: number }> {
+    const results = { ideas: 0, memos: 0 };
+
+    // Migrate ideas
+    for (const idea of ideas) {
+      try {
+        await this.createIdea(idea);
+        results.ideas++;
+      } catch (error) {
+        console.warn('Failed to migrate idea:', idea.title, error);
+      }
+    }
+
+    // Migrate memos
+    for (const memo of memos) {
+      try {
+        await this.saveMemo(memo.date, memo.content);
+        results.memos++;
+      } catch (error) {
+        console.warn('Failed to migrate memo:', memo.date, error);
+      }
+    }
+
+    return results;
+  }
 }
 
 export const api = new ApiService();

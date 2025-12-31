@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import api, { ApiError } from '../services/api';
+import { guestStorage } from '../services/guestStorage';
+import type { IdeaFormData } from '../types';
 
 interface User {
   id: string;
@@ -9,19 +11,31 @@ interface User {
   createdAt: string;
 }
 
+interface GuestDataInfo {
+  ideaCount: number;
+  memoCount: number;
+}
+
+interface MigrationResult {
+  ideas: number;
+  memos: number;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
   isGuest: boolean;
   sessionExpired: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  login: (email: string, password: string, migrateData?: boolean) => Promise<MigrationResult | null>;
+  register: (email: string, password: string, name: string, migrateData?: boolean) => Promise<MigrationResult | null>;
   logout: () => void;
   continueAsGuest: () => void;
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   clearSessionExpired: () => void;
+  getGuestDataInfo: () => GuestDataInfo;
+  hasGuestData: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,19 +85,92 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, [handleSessionExpired]);
 
-  const login = async (email: string, password: string) => {
-    const { user: userData } = await api.login(email, password);
-    setUser(userData);
-    setIsGuest(false);
-    setSessionExpired(false);
-    localStorage.removeItem('guestMode');
+  const getGuestDataInfo = useCallback((): GuestDataInfo => {
+    const ideas = guestStorage.getIdeas();
+    const memos = guestStorage.getMemos();
+    return {
+      ideaCount: ideas.length,
+      memoCount: memos.length,
+    };
+  }, []);
+
+  const hasGuestData = useCallback((): boolean => {
+    const info = getGuestDataInfo();
+    return info.ideaCount > 0 || info.memoCount > 0;
+  }, [getGuestDataInfo]);
+
+  const migrateGuestDataToServer = async (): Promise<MigrationResult> => {
+    const ideas = guestStorage.getIdeas();
+    const memos = guestStorage.getMemos();
+
+    // Convert ideas to IdeaFormData format
+    const ideaFormData: IdeaFormData[] = ideas.map(idea => ({
+      title: idea.title,
+      description: idea.description,
+      category: idea.category,
+      tags: idea.tags,
+      status: idea.status,
+      priority: idea.priority,
+      notes: idea.notes || '',
+      targetMarket: idea.targetMarket || '',
+      potentialRevenue: idea.potentialRevenue || '',
+      resources: idea.resources || '',
+      timeline: idea.timeline || '',
+    }));
+
+    // Convert memos to simple format
+    const memoData = memos.map(memo => ({
+      date: memo.date,
+      content: memo.content,
+    }));
+
+    const result = await api.migrateGuestData(ideaFormData, memoData);
+
+    // Clear guest data after successful migration
+    guestStorage.clear();
+
+    return result;
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    const { user: userData } = await api.register(email, password, name);
+  const login = async (email: string, password: string, migrateData: boolean = false): Promise<MigrationResult | null> => {
+    const { user: userData } = await api.login(email, password);
     setUser(userData);
+    setSessionExpired(false);
+
+    let migrationResult: MigrationResult | null = null;
+
+    // Migrate guest data if requested and guest data exists
+    if (migrateData && isGuest && hasGuestData()) {
+      migrationResult = await migrateGuestDataToServer();
+    } else {
+      // Clear guest data without migration
+      guestStorage.clear();
+    }
+
     setIsGuest(false);
     localStorage.removeItem('guestMode');
+
+    return migrationResult;
+  };
+
+  const register = async (email: string, password: string, name: string, migrateData: boolean = false): Promise<MigrationResult | null> => {
+    const { user: userData } = await api.register(email, password, name);
+    setUser(userData);
+
+    let migrationResult: MigrationResult | null = null;
+
+    // Migrate guest data if requested and guest data exists
+    if (migrateData && isGuest && hasGuestData()) {
+      migrationResult = await migrateGuestDataToServer();
+    } else {
+      // Clear guest data without migration
+      guestStorage.clear();
+    }
+
+    setIsGuest(false);
+    localStorage.removeItem('guestMode');
+
+    return migrationResult;
   };
 
   const logout = () => {
@@ -122,6 +209,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateProfile,
         changePassword,
         clearSessionExpired,
+        getGuestDataInfo,
+        hasGuestData,
       }}
     >
       {children}
