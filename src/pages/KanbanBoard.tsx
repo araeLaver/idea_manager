@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
 interface Column {
@@ -173,6 +174,7 @@ function KanbanColumn({ column, ideas, onDelete }: KanbanColumnProps) {
 
 export function KanbanBoard() {
   const { ideas, loading, deleteIdea, updateIdea } = useData();
+  const { isGuest } = useAuth();
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -247,9 +249,13 @@ export function KanbanBoard() {
               <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                 칸반 보드
               </h1>
+              {isGuest && (
+                <span className="badge badge-warning text-xs">게스트 모드</span>
+              )}
             </div>
             <p className="text-sm ml-12" style={{ color: 'var(--text-secondary)' }}>
               드래그 앤 드롭으로 아이디어 상태를 관리하세요
+              {isGuest && ' (브라우저에 저장됩니다)'}
             </p>
           </div>
           <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>

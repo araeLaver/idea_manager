@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 
 interface StatsCardProps {
@@ -239,6 +240,7 @@ function DailyMemo() {
 
 export function Dashboard() {
   const { ideas, loading } = useData();
+  const { isGuest } = useAuth();
 
   const totalIdeas = ideas.length;
   const completedIdeas = ideas.filter(idea => idea.status === 'completed').length;
@@ -310,13 +312,19 @@ export function Dashboard() {
                   <Lightbulb className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                    아이디어 매니저
-                  </h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                      아이디어 매니저
+                    </h1>
+                    {isGuest && (
+                      <span className="badge badge-warning text-xs">게스트 모드</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <p className="text-white/80 text-lg max-w-xl">
                 창의적인 아이디어를 체계적으로 관리하고 실현하세요
+                {isGuest && ' (브라우저에 저장됩니다)'}
               </p>
 
               {/* Quick Stats */}

@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import type { IdeaFormData, Idea } from '../types';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import { AIFeatures } from '../components/AIFeatures';
 
 export function IdeaForm() {
@@ -10,6 +11,7 @@ export function IdeaForm() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const { createIdea, updateIdea, getIdea } = useData();
+  const { isGuest } = useAuth();
 
   const [formData, setFormData] = useState<IdeaFormData>({
     title: '',
@@ -126,9 +128,14 @@ export function IdeaForm() {
 
       {/* Form Card */}
       <div className="card" style={{ padding: 'var(--space-8)' }}>
-        <h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
-          {isEdit ? '아이디어 수정' : '새 아이디어'}
-        </h1>
+        <div className="flex items-center gap-3 mb-6">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            {isEdit ? '아이디어 수정' : '새 아이디어'}
+          </h1>
+          {isGuest && (
+            <span className="badge badge-warning text-xs">게스트 모드</span>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit}>
           {/* Title */}

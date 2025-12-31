@@ -8,12 +8,14 @@ import {
 } from 'lucide-react';
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 
 type SortBy = 'created' | 'updated' | 'title' | 'status' | 'priority';
 type FilterBy = 'all' | 'draft' | 'in-progress' | 'completed' | 'archived';
 
 export function History() {
   const { ideas, loading } = useData();
+  const { isGuest } = useAuth();
   const [sortBy, setSortBy] = useState<SortBy>('updated');
   const [filterBy, setFilterBy] = useState<FilterBy>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,9 +111,13 @@ export function History() {
           <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             아이디어 히스토리
           </h1>
+          {isGuest && (
+            <span className="badge badge-warning text-xs">게스트 모드</span>
+          )}
         </div>
         <p className="text-sm ml-12" style={{ color: 'var(--text-secondary)' }}>
           모든 아이디어의 변경 내역과 전체 기록을 확인해보세요
+          {isGuest && ' (브라우저에 저장됩니다)'}
         </p>
       </div>
 

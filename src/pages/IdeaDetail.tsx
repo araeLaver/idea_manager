@@ -7,30 +7,52 @@ import {
   Target, DollarSign, Clock, Briefcase, FileText
 } from 'lucide-react';
 import type { Idea } from '../types';
-import { storage } from '../utils/storage';
+import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { getIdea, deleteIdea } = useData();
+  const { isGuest } = useAuth();
   const [idea, setIdea] = useState<Idea | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      const storedIdea = storage.getIdea(id);
-      if (storedIdea) {
-        setIdea(storedIdea);
-      } else {
+      setLoading(true);
+      getIdea(id).then(fetchedIdea => {
+        if (fetchedIdea) {
+          setIdea(fetchedIdea);
+        } else {
+          navigate('/');
+        }
+        setLoading(false);
+      });
+    }
+  }, [id, navigate, getIdea]);
+
+  const handleDelete = async () => {
+    if (id && confirm('이 아이디어를 삭제하시겠습니까?')) {
+      try {
+        await deleteIdea(id);
         navigate('/');
+      } catch {
+        alert('아이디어 삭제에 실패했습니다.');
       }
     }
-  }, [id, navigate]);
-
-  const handleDelete = () => {
-    if (id && confirm('이 아이디어를 삭제하시겠습니까?')) {
-      storage.deleteIdea(id);
-      navigate('/');
-    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center" style={{ height: '400px' }}>
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4" />
+          <p style={{ color: 'var(--text-secondary)' }}>아이디어를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!idea) return null;
 
@@ -100,9 +122,14 @@ export function IdeaDetail() {
       <div className="card" style={{ padding: 'var(--space-8)' }}>
         {/* Title & Status */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-          <h1 className="text-3xl font-bold flex-1" style={{ color: 'var(--text-primary)' }}>
-            {idea.title}
-          </h1>
+          <div className="flex items-center gap-3 flex-1">
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              {idea.title}
+            </h1>
+            {isGuest && (
+              <span className="badge badge-warning text-xs">게스트 모드</span>
+            )}
+          </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className={`badge ${getStatusClass(idea.status)}`}>
               {getStatusLabel(idea.status)}

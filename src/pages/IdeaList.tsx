@@ -4,11 +4,13 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Calendar, Trash2, Grid3X3, List, Eye, Plus, Lightbulb } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getStatusLabel, getStatusClass, getStatusGradient } from '../utils/labelMappings';
 import type { IdeaStatus } from '../types';
 
 export function IdeaList() {
   const { ideas, loading, deleteIdea } = useData();
+  const { isGuest } = useAuth();
   const [filter, setFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
@@ -51,11 +53,17 @@ export function IdeaList() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
-              아이디어 목록
-            </h1>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                아이디어 목록
+              </h1>
+              {isGuest && (
+                <span className="badge badge-warning text-xs">게스트 모드</span>
+              )}
+            </div>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               창의적인 아이디어들을 관리해보세요
+              {isGuest && ' (브라우저에 저장됩니다)'}
             </p>
           </div>
 

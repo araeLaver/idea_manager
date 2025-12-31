@@ -1,25 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, X, Filter, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import type { Idea } from '../types';
-import { storage } from '../utils/storage';
+import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export function SearchPage() {
-  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const { ideas, loading } = useData();
+  const { isGuest } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
 
-  useEffect(() => {
-    const storedIdeas = storage.getIdeas();
-    setIdeas(storedIdeas);
-    const uniqueCategories = Array.from(new Set(storedIdeas.map(idea => idea.category)));
-    setCategories(uniqueCategories);
-  }, []);
+  const categories = useMemo(() => {
+    return Array.from(new Set(ideas.map(idea => idea.category)));
+  }, [ideas]);
 
   const filteredIdeas = ideas.filter(idea => {
     const matchesSearch = searchTerm === '' ||
@@ -64,6 +61,17 @@ export function SearchPage() {
     return labels[priority] || priority;
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center" style={{ height: '400px' }}>
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4" />
+          <p style={{ color: 'var(--text-secondary)' }}>아이디어를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Header */}
@@ -75,9 +83,13 @@ export function SearchPage() {
           <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
             아이디어 검색
           </h1>
+          {isGuest && (
+            <span className="badge badge-warning text-xs">게스트 모드</span>
+          )}
         </div>
         <p className="text-sm ml-12" style={{ color: 'var(--text-secondary)' }}>
           제목, 설명, 태그로 아이디어를 검색하세요
+          {isGuest && ' (브라우저에 저장됩니다)'}
         </p>
       </div>
 
