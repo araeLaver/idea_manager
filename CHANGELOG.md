@@ -1,5 +1,76 @@
 # Changelog
 
+## [2025-01-02] AI 기능 강화 및 테스트 확장
+
+### 새로운 기능
+
+#### 1. AI 아이디어 생성기 확장 (`src/services/aiService.ts`)
+- **샘플 아이디어 확장**: 5개 → 25개 이상 (8개 카테고리)
+- **동적 아이디어 생성**: 템플릿 기반 조합으로 무한 아이디어 생성
+- **카테고리**: 기술, 서비스, 헬스케어, 환경, 교육, 비즈니스, 엔터테인먼트, 디자인
+
+#### 2. 유사 아이디어 찾기 (`findSimilarIdeas`)
+- **Jaccard 유사도 알고리즘**: 텍스트 기반 유사성 분석
+- **매칭 키워드 표시**: 어떤 키워드가 일치하는지 확인
+- **중복 방지**: 새 아이디어 작성 시 기존 아이디어와 비교
+
+#### 3. SWOT 분석 (`generateSWOT`)
+- **자동 SWOT 분석**: 아이디어의 강점/약점/기회/위협 분석
+- **키워드 기반 분석**: AI, 플랫폼, 헬스케어, 환경 등 키워드별 맞춤 분석
+- **4분면 UI**: 색상으로 구분된 직관적인 분석 결과 표시
+
+#### 4. 브레인스토밍 채팅 (`src/components/AIBrainstorm.tsx`)
+- **플로팅 채팅 인터페이스**: 우하단 채팅 버튼
+- **질문 유형별 맞춤 응답**:
+  - 구현 방법, 비즈니스 모델, 리스크 분석
+  - 경쟁 전략, 타겟 고객, 아이디어 발전
+- **제안 및 후속 질문**: 클릭하여 바로 입력
+- **최소화/최대화**: 작업 중 편리하게 사용
+
+#### 5. AI 어시스턴트 통합 (`src/components/Layout.tsx`)
+- **AIAssistant**: 플로팅 아이디어 생성 버튼
+- **AIBrainstorm**: 플로팅 브레인스토밍 채팅 버튼
+
+### 테스트 추가
+
+#### 새로운 테스트 파일
+- `src/test/services/aiService.test.ts` - AI 서비스 테스트 (46개)
+- `src/test/services/guestStorage.test.ts` - 게스트 스토리지 테스트 (32개)
+- `src/test/utils/testUtils.tsx` - 테스트 유틸리티
+
+#### 테스트 커버리지
+| 기능 | 테스트 수 |
+|------|----------|
+| categorizeIdea | 5개 |
+| suggestTags | 3개 |
+| generateIdeaSuggestions | 4개 |
+| generateDynamicIdeas | 5개 |
+| findSimilarIdeas | 7개 |
+| generateSWOT | 8개 |
+| brainstorm | 9개 |
+| improveIdea | 4개 |
+| isAvailable | 1개 |
+
+### 수정된 파일
+- `src/services/aiService.ts` - 새 AI 함수 추가 (+479줄)
+- `src/components/AIFeatures.tsx` - 유사 아이디어, SWOT 분석 UI (+214줄)
+- `src/components/Layout.tsx` - AI 플로팅 버튼 통합
+- `src/pages/IdeaForm.tsx` - tags prop 전달
+- `src/test/components/Layout.test.tsx` - 테스트 수정
+- `src/test/pages/Dashboard.test.tsx` - 테스트 수정
+- `src/test/utils/storage.test.ts` - 테스트 수정
+
+### 테스트 결과
+```
+Test Files  5 passed (5)
+Tests       100 passed (100)
+```
+
+### 커밋 히스토리
+- `245775d` feat: Enhance AI features with SWOT analysis, similar ideas finder, and brainstorming chat
+
+---
+
 ## [2025-01-01] 게스트 데이터 마이그레이션
 
 ### 새로운 기능
