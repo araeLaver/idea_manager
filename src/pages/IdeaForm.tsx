@@ -166,6 +166,7 @@ export function IdeaForm() {
           <AIFeatures
             title={formData.title}
             description={formData.description}
+            tags={formData.tags}
             onCategorySelect={handleCategorySelect}
             onTagsSelect={handleTagsSelect}
           />

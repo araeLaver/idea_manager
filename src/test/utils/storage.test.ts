@@ -1,9 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { storage } from '../../utils/storage';
 import type { IdeaFormData } from '../../types';
 
-describe.skip('Storage Utils', () => {
+describe('Storage Utils', () => {
   beforeEach(() => {
+    localStorage.clear();
+    // 샘플 데이터 생성 방지를 위해 빈 배열로 초기화
+    storage.saveIdeas([]);
+  });
+
+  afterEach(() => {
     localStorage.clear();
   });
 
@@ -19,7 +25,7 @@ describe.skip('Storage Utils', () => {
   describe('createIdea', () => {
     it('should create a new idea', () => {
       const idea = storage.createIdea(mockIdea);
-      
+
       expect(idea.id).toBeDefined();
       expect(idea.title).toBe(mockIdea.title);
       expect(idea.description).toBe(mockIdea.description);
@@ -34,22 +40,24 @@ describe.skip('Storage Utils', () => {
     it('should save idea to localStorage', () => {
       const idea = storage.createIdea(mockIdea);
       const storedIdeas = JSON.parse(localStorage.getItem('ideas') || '[]');
-      
+
       expect(storedIdeas).toHaveLength(1);
       expect(storedIdeas[0].id).toBe(idea.id);
     });
   });
 
   describe('getIdeas', () => {
-    it('should return empty array when no ideas exist', () => {
+    it('should return sample ideas on first call when no data exists', () => {
+      localStorage.clear(); // 빈 배열 초기화 제거
       const ideas = storage.getIdeas();
-      expect(ideas).toEqual([]);
+      // 첫 호출 시 샘플 데이터가 생성됨
+      expect(ideas.length).toBeGreaterThan(0);
     });
 
     it('should return all stored ideas', () => {
       const idea1 = storage.createIdea(mockIdea);
       const idea2 = storage.createIdea({ ...mockIdea, title: '두 번째 아이디어' });
-      
+
       const ideas = storage.getIdeas();
       expect(ideas).toHaveLength(2);
       expect(ideas.map(i => i.id)).toContain(idea1.id);
@@ -66,7 +74,7 @@ describe.skip('Storage Utils', () => {
     it('should return idea by id', () => {
       const createdIdea = storage.createIdea(mockIdea);
       const foundIdea = storage.getIdea(createdIdea.id);
-      
+
       expect(foundIdea).not.toBeNull();
       expect(foundIdea?.id).toBe(createdIdea.id);
       expect(foundIdea?.title).toBe(mockIdea.title);
@@ -77,39 +85,68 @@ describe.skip('Storage Utils', () => {
     it('should update existing idea', () => {
       const createdIdea = storage.createIdea(mockIdea);
       const updates = { title: '업데이트된 제목', status: 'completed' as const };
-      
+
       storage.updateIdea(createdIdea.id, updates);
       const updatedIdea = storage.getIdea(createdIdea.id);
-      
+
       expect(updatedIdea?.title).toBe(updates.title);
       expect(updatedIdea?.status).toBe(updates.status);
-      expect(updatedIdea?.description).toBe(mockIdea.description); // 기존 값 유지
+      expect(updatedIdea?.description).toBe(mockIdea.description);
     });
 
-    it('should update updatedAt timestamp', () => {
+    it('should update updatedAt timestamp', async () => {
       const createdIdea = storage.createIdea(mockIdea);
       const originalUpdatedAt = createdIdea.updatedAt;
-      
+
       // 시간 차이를 위해 잠시 대기
-      setTimeout(() => {
-        storage.updateIdea(createdIdea.id, { title: '새 제목' });
-        const updatedIdea = storage.getIdea(createdIdea.id);
-        
-        expect(updatedIdea?.updatedAt).not.toBe(originalUpdatedAt);
-      }, 10);
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      storage.updateIdea(createdIdea.id, { title: '새 제목' });
+      const updatedIdea = storage.getIdea(createdIdea.id);
+
+      expect(updatedIdea?.updatedAt).not.toBe(originalUpdatedAt);
     });
   });
 
   describe('deleteIdea', () => {
     it('should delete existing idea', () => {
-      const idea1 = storage.createIdea(mockIdea);
-      const idea2 = storage.createIdea({ ...mockIdea, title: '두 번째' });
-      
-      storage.deleteIdea(idea1.id);
-      
+      // 독립적인 테스트를 위해 localStorage를 직접 조작
+      const testIdea1 = {
+        id: 'test-id-1',
+        title: '첫 번째',
+        description: '설명',
+        category: '기술',
+        priority: 'high' as const,
+        status: 'draft' as const,
+        tags: ['테스트'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const testIdea2 = {
+        id: 'test-id-2',
+        title: '두 번째',
+        description: '설명',
+        category: '기술',
+        priority: 'high' as const,
+        status: 'draft' as const,
+        tags: ['테스트'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 직접 저장
+      storage.saveIdeas([testIdea1, testIdea2]);
+
+      // 생성 확인
+      expect(storage.getIdeas()).toHaveLength(2);
+
+      // 삭제
+      storage.deleteIdea('test-id-1');
+
+      // 결과 확인
       const ideas = storage.getIdeas();
       expect(ideas).toHaveLength(1);
-      expect(ideas[0].id).toBe(idea2.id);
+      expect(ideas[0].id).toBe('test-id-2');
     });
 
     it('should not throw error when deleting non-existent idea', () => {

@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState, useEffect } from 'react';
 import { Tutorial } from './Tutorial';
+import { AIAssistant } from './AIAssistant';
+import { AIBrainstorm } from './AIBrainstorm';
 
 export function Layout() {
   const { user, logout, isGuest } = useAuth();
@@ -331,6 +333,10 @@ export function Layout() {
 
       {/* Tutorial */}
       <Tutorial run={runTutorial} onFinish={() => setRunTutorial(false)} />
+
+      {/* AI Floating Buttons */}
+      <AIAssistant />
+      <AIBrainstorm />
     </div>
   );
 }
