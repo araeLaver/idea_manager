@@ -4,11 +4,12 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
   ArrowLeft, Edit, Trash2, Calendar, Tag, TrendingUp,
-  Target, DollarSign, Clock, Briefcase, FileText
+  Target, DollarSign, Clock, Briefcase, FileText, Printer
 } from 'lucide-react';
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass } from '../utils/labelMappings';
 
 export function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +44,10 @@ export function IdeaDetail() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center" style={{ height: '400px' }}>
@@ -55,44 +60,6 @@ export function IdeaDetail() {
   }
 
   if (!idea) return null;
-
-  const getStatusClass = (status: Idea['status']) => {
-    const classes: Record<string, string> = {
-      'draft': 'status-draft',
-      'in-progress': 'status-in-progress',
-      'completed': 'status-completed',
-      'archived': 'status-archived',
-    };
-    return classes[status] || 'status-draft';
-  };
-
-  const getPriorityClass = (priority: Idea['priority']) => {
-    const classes: Record<string, string> = {
-      'low': 'priority-low',
-      'medium': 'priority-medium',
-      'high': 'priority-high',
-    };
-    return classes[priority] || 'priority-medium';
-  };
-
-  const getStatusLabel = (status: Idea['status']) => {
-    const labels: Record<string, string> = {
-      'draft': '초안',
-      'in-progress': '진행중',
-      'completed': '완료',
-      'archived': '보관됨',
-    };
-    return labels[status] || status;
-  };
-
-  const getPriorityLabel = (priority: Idea['priority']) => {
-    const labels: Record<string, string> = {
-      'low': '낮음',
-      'medium': '보통',
-      'high': '높음',
-    };
-    return labels[priority] || priority;
-  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -107,11 +74,15 @@ export function IdeaDetail() {
           목록으로
         </Link>
         <div className="flex gap-2">
-          <Link to={`/edit/${id}`} className="btn btn-primary">
+          <button onClick={handlePrint} className="btn btn-secondary print-hide">
+            <Printer className="w-4 h-4" />
+            <span>인쇄</span>
+          </button>
+          <Link to={`/edit/${id}`} className="btn btn-primary print-hide">
             <Edit className="w-4 h-4" />
             <span>수정</span>
           </Link>
-          <button onClick={handleDelete} className="btn btn-danger">
+          <button onClick={handleDelete} className="btn btn-danger print-hide">
             <Trash2 className="w-4 h-4" />
             <span>삭제</span>
           </button>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, Tag, FolderOpen, Wand2, Loader2, Search, Target, TrendingUp, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bot, Tag, FolderOpen, Wand2, Loader2, Search, Target, TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Lightbulb, Check } from 'lucide-react';
 import { aiService } from '../services/aiService';
 import { useData } from '../contexts/DataContext';
 
@@ -9,6 +9,8 @@ interface AIFeaturesProps {
   tags?: string[];
   onCategorySelect?: (category: string) => void;
   onTagsSelect?: (tags: string[]) => void;
+  onTitleChange?: (title: string) => void;
+  onDescriptionChange?: (description: string) => void;
 }
 
 interface SimilarIdea {
@@ -25,16 +27,24 @@ interface SWOTAnalysis {
   threats: string[];
 }
 
-export function AIFeatures({ title, description, tags, onCategorySelect, onTagsSelect }: AIFeaturesProps) {
+interface ImprovementSuggestions {
+  improvedTitle?: string;
+  improvedDescription?: string;
+  suggestions: string[];
+}
+
+export function AIFeatures({ title, description, tags, onCategorySelect, onTagsSelect, onTitleChange, onDescriptionChange }: AIFeaturesProps) {
   const { ideas } = useData();
   const [loadingCategory, setLoadingCategory] = useState(false);
   const [loadingTags, setLoadingTags] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [loadingSWOT, setLoadingSWOT] = useState(false);
+  const [loadingImprove, setLoadingImprove] = useState(false);
   const [categoryPrediction, setCategoryPrediction] = useState<{ category: string; confidence: number } | null>(null);
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [similarIdeas, setSimilarIdeas] = useState<SimilarIdea[]>([]);
   const [swotAnalysis, setSWOTAnalysis] = useState<SWOTAnalysis | null>(null);
+  const [improvements, setImprovements] = useState<ImprovementSuggestions | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const suggestCategory = async () => {
@@ -136,6 +146,37 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
       alert('SWOT 분석 생성에 실패했습니다.');
     } finally {
       setLoadingSWOT(false);
+    }
+  };
+
+  const getImprovements = async () => {
+    if (!title && !description) {
+      alert('제목이나 설명을 먼저 입력해주세요.');
+      return;
+    }
+
+    setLoadingImprove(true);
+    try {
+      const result = await aiService.improveIdea(title, description);
+      setImprovements(result);
+    } catch {
+      alert('개선 제안 생성에 실패했습니다.');
+    } finally {
+      setLoadingImprove(false);
+    }
+  };
+
+  const applyImprovedTitle = () => {
+    if (improvements?.improvedTitle && onTitleChange) {
+      onTitleChange(improvements.improvedTitle);
+      setImprovements(prev => prev ? { ...prev, improvedTitle: undefined } : null);
+    }
+  };
+
+  const applyImprovedDescription = () => {
+    if (improvements?.improvedDescription && onDescriptionChange) {
+      onDescriptionChange(improvements.improvedDescription);
+      setImprovements(prev => prev ? { ...prev, improvedDescription: undefined } : null);
     }
   };
 
@@ -387,6 +428,92 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
           </div>
         </div>
       )}
+
+      {/* 개선 제안 - 항상 표시 */}
+      <div className="p-4 bg-white rounded-xl border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-accent" />
+            <span className="text-sm font-medium text-primary">개선 제안</span>
+          </div>
+          <button
+            onClick={getImprovements}
+            disabled={loadingImprove || (!title && !description)}
+            className="btn-ghost px-3 py-1 text-xs rounded-lg hover:bg-hover transition-all disabled:opacity-50"
+          >
+            {loadingImprove ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Wand2 className="h-3 w-3" />
+            )}
+          </button>
+        </div>
+
+        {improvements && (
+          <div className="space-y-3">
+            {/* 개선된 제목 */}
+            {improvements.improvedTitle && onTitleChange && (
+              <div className="p-2 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <span className="text-xs font-medium text-amber-700">개선된 제목</span>
+                    <p className="text-sm text-amber-900 mt-1">{improvements.improvedTitle}</p>
+                  </div>
+                  <button
+                    onClick={applyImprovedTitle}
+                    className="flex-shrink-0 p-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                    title="적용"
+                  >
+                    <Check className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 개선된 설명 */}
+            {improvements.improvedDescription && onDescriptionChange && (
+              <div className="p-2 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <span className="text-xs font-medium text-amber-700">개선된 설명</span>
+                    <p className="text-sm text-amber-900 mt-1 whitespace-pre-wrap">{improvements.improvedDescription}</p>
+                  </div>
+                  <button
+                    onClick={applyImprovedDescription}
+                    className="flex-shrink-0 p-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                    title="적용"
+                  >
+                    <Check className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 개선 제안 목록 */}
+            {improvements.suggestions.length > 0 && (
+              <div className="p-2 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <span className="text-xs font-medium text-purple-700 flex items-center gap-1 mb-2">
+                  <Lightbulb className="h-3 w-3" /> 개선 포인트
+                </span>
+                <ul className="space-y-1">
+                  {improvements.suggestions.map((suggestion, idx) => (
+                    <li key={idx} className="text-xs text-purple-600 flex items-start gap-1.5">
+                      <span className="text-purple-400 mt-0.5">•</span>
+                      <span>{suggestion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!improvements && !loadingImprove && (
+          <p className="text-xs text-tertiary">
+            AI가 제목과 설명을 분석하여 개선 방안을 제안합니다.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

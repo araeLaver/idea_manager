@@ -10,10 +10,12 @@ import {
   ArrowUp, ArrowDown, Minus,
   Edit3, Save, History, Plus, ArrowRight
 } from 'lucide-react';
-import type { Idea } from '../types';
+import type { Idea, IdeaStatus } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { getStatusLabel, getStatusClass } from '../utils/labelMappings';
+import { SkeletonDashboard } from '../components/Skeleton';
 
 interface StatsCardProps {
   title: string;
@@ -66,29 +68,12 @@ function StatsCard({ title, value, change, icon, gradient }: StatsCardProps) {
 }
 
 function RecentActivity({ ideas }: { ideas: Idea[] }) {
-  const recentIdeas = ideas
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5);
-
-  const getStatusStyle = (status: string) => {
-    const styles: Record<string, string> = {
-      'draft': 'status-draft',
-      'in-progress': 'status-in-progress',
-      'completed': 'status-completed',
-      'archived': 'status-archived',
-    };
-    return styles[status] || 'status-draft';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      'draft': '초안',
-      'in-progress': '진행중',
-      'completed': '완료',
-      'archived': '보관됨',
-    };
-    return labels[status] || status;
-  };
+  const recentIdeas = useMemo(() =>
+    [...ideas]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5),
+    [ideas]
+  );
 
   return (
     <div className="card" style={{ padding: 'var(--space-6)' }}>
@@ -115,8 +100,8 @@ function RecentActivity({ ideas }: { ideas: Idea[] }) {
                   {idea.title}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`badge ${getStatusStyle(idea.status)}`}>
-                    {getStatusLabel(idea.status)}
+                  <span className={`badge ${getStatusClass(idea.status as IdeaStatus)}`}>
+                    {getStatusLabel(idea.status as IdeaStatus)}
                   </span>
                   <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     {format(new Date(idea.updatedAt), 'MM.dd HH:mm', { locale: ko })}
@@ -242,54 +227,58 @@ export function Dashboard() {
   const { ideas, loading } = useData();
   const { isGuest } = useAuth();
 
-  const totalIdeas = ideas.length;
-  const completedIdeas = ideas.filter(idea => idea.status === 'completed').length;
-  const inProgressIdeas = ideas.filter(idea => idea.status === 'in-progress').length;
-  const completionRate = totalIdeas > 0 ? Math.round((completedIdeas / totalIdeas) * 100) : 0;
-  const highPriority = ideas.filter(idea => idea.priority === 'high').length;
+  const { totalIdeas, completedIdeas, inProgressIdeas, completionRate, highPriority } = useMemo(() => {
+    const total = ideas.length;
+    const completed = ideas.filter(idea => idea.status === 'completed').length;
+    const inProgress = ideas.filter(idea => idea.status === 'in-progress').length;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const high = ideas.filter(idea => idea.priority === 'high').length;
+    return { totalIdeas: total, completedIdeas: completed, inProgressIdeas: inProgress, completionRate: rate, highPriority: high };
+  }, [ideas]);
 
-  const statusData = totalIdeas > 0 ? [
-    { name: '초안', value: ideas.filter(i => i.status === 'draft').length, color: '#64748b' },
-    { name: '진행중', value: inProgressIdeas, color: '#3b82f6' },
-    { name: '완료', value: completedIdeas, color: '#22c55e' },
-    { name: '보관됨', value: ideas.filter(i => i.status === 'archived').length, color: '#f59e0b' },
-  ].filter(item => item.value > 0) : [];
+  const statusData = useMemo(() => {
+    if (totalIdeas === 0) return [];
+    return [
+      { name: '초안', value: ideas.filter(i => i.status === 'draft').length, color: '#64748b' },
+      { name: '진행중', value: inProgressIdeas, color: '#3b82f6' },
+      { name: '완료', value: completedIdeas, color: '#22c55e' },
+      { name: '보관됨', value: ideas.filter(i => i.status === 'archived').length, color: '#f59e0b' },
+    ].filter(item => item.value > 0);
+  }, [ideas, totalIdeas, inProgressIdeas, completedIdeas]);
 
-  const priorityData = totalIdeas > 0 ? [
-    { name: '높음', value: highPriority, color: '#ef4444' },
-    { name: '보통', value: ideas.filter(i => i.priority === 'medium').length, color: '#f59e0b' },
-    { name: '낮음', value: ideas.filter(i => i.priority === 'low').length, color: '#64748b' },
-  ].filter(item => item.value > 0) : [];
+  const priorityData = useMemo(() => {
+    if (totalIdeas === 0) return [];
+    return [
+      { name: '높음', value: highPriority, color: '#ef4444' },
+      { name: '보통', value: ideas.filter(i => i.priority === 'medium').length, color: '#f59e0b' },
+      { name: '낮음', value: ideas.filter(i => i.priority === 'low').length, color: '#64748b' },
+    ].filter(item => item.value > 0);
+  }, [ideas, totalIdeas, highPriority]);
 
-  const categoryStats = ideas.reduce((acc, idea) => {
-    acc[idea.category] = (acc[idea.category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const categoryData = useMemo(() => {
+    const stats = ideas.reduce((acc, idea) => {
+      acc[idea.category] = (acc[idea.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return Object.entries(stats)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  }, [ideas]);
 
-  const categoryData = Object.entries(categoryStats)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
-
-  const tagStats = ideas.reduce((acc, idea) => {
-    idea.tags.forEach(tag => { acc[tag] = (acc[tag] || 0) + 1; });
-    return acc;
-  }, {} as Record<string, number>);
-
-  const topTags = Object.entries(tagStats)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 8)
-    .map(([tag, count]) => ({ tag, count }));
+  const topTags = useMemo(() => {
+    const stats = ideas.reduce((acc, idea) => {
+      idea.tags.forEach(tag => { acc[tag] = (acc[tag] || 0) + 1; });
+      return acc;
+    }, {} as Record<string, number>);
+    return Object.entries(stats)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 8)
+      .map(([tag, count]) => ({ tag, count }));
+  }, [ideas]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center" style={{ height: '400px' }}>
-        <div className="text-center">
-          <div className="spinner mx-auto mb-4" />
-          <p style={{ color: 'var(--text-secondary)' }}>데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   return (

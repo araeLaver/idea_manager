@@ -126,9 +126,18 @@ export default function Login() {
 
             {/* Password Field */}
             <div className="form-group">
-              <label htmlFor="password" className="form-label">
-                비밀번호
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="form-label" style={{ marginBottom: 0 }}>
+                  비밀번호
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium transition-colors"
+                  style={{ color: 'var(--accent-primary)' }}
+                >
+                  비밀번호 찾기
+                </Link>
+              </div>
               <div className="relative">
                 <div
                   className="absolute left-0 top-0 bottom-0 flex items-center"

@@ -38,6 +38,13 @@ export const PRIORITY_COLORS: Record<IdeaPriority, string> = {
   'high': 'text-error bg-error-light',
 };
 
+/** Maps priority values to CSS class names */
+export const PRIORITY_CLASSES: Record<IdeaPriority, string> = {
+  'low': 'priority-low',
+  'medium': 'priority-medium',
+  'high': 'priority-high',
+};
+
 /** Get Korean label for status value */
 export function getStatusLabel(status: IdeaStatus): string {
   return STATUS_LABELS[status] || status;
@@ -61,4 +68,9 @@ export function getPriorityLabel(priority: IdeaPriority): string {
 /** Get CSS color class for priority badge */
 export function getPriorityColor(priority: IdeaPriority): string {
   return PRIORITY_COLORS[priority] || 'text-tertiary bg-secondary';
+}
+
+/** Get CSS class for priority badge */
+export function getPriorityClass(priority: IdeaPriority): string {
+  return PRIORITY_CLASSES[priority] || 'priority-medium';
 }

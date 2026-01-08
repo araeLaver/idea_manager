@@ -1,33 +1,85 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Calendar, Trash2, Grid3X3, List, Eye, Plus, Lightbulb } from 'lucide-react';
+import { Calendar, Trash2, Grid3X3, List, Eye, Plus, Lightbulb, CheckSquare, Square, X, Download, Upload } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { getStatusLabel, getStatusClass, getStatusGradient } from '../utils/labelMappings';
+import { ExportImport } from '../components/ExportImport';
+import { SkeletonList } from '../components/Skeleton';
 import type { IdeaStatus } from '../types';
 
 export function IdeaList() {
-  const { ideas, loading, deleteIdea } = useData();
+  const { ideas, loading, deleteIdea, bulkUpdateStatus } = useData();
   const { isGuest } = useAuth();
+  const { showToast } = useToast();
   const [filter, setFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [showExportImport, setShowExportImport] = useState(false);
 
   const handleDelete = async (id: string) => {
     if (confirm('이 아이디어를 삭제하시겠습니까?')) {
       try {
         await deleteIdea(id);
+        setSelectedIds(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        showToast('아이디어가 삭제되었습니다.', 'success');
       } catch {
-        alert('아이디어 삭제에 실패했습니다.');
+        showToast('아이디어 삭제에 실패했습니다.', 'error');
       }
     }
   };
 
-  const filteredIdeas = ideas.filter(idea => {
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredIdeas.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredIdeas.map(i => i.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkStatusChange = async (status: IdeaStatus) => {
+    if (selectedIds.size === 0) return;
+
+    setBulkLoading(true);
+    try {
+      await bulkUpdateStatus(Array.from(selectedIds), status);
+      showToast(`${selectedIds.size}개 아이디어의 상태가 변경되었습니다.`, 'success');
+      setSelectedIds(new Set());
+    } catch {
+      showToast('상태 변경에 실패했습니다.', 'error');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const filteredIdeas = useMemo(() => ideas.filter(idea => {
     if (filter === 'all') return true;
     return idea.status === filter;
-  });
+  }), [ideas, filter]);
 
   const filterButtons = [
     { key: 'all', label: '전체', count: ideas.length },
@@ -38,11 +90,20 @@ export function IdeaList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: '400px' }}>
-        <div className="text-center">
-          <div className="spinner mx-auto mb-4" />
-          <p style={{ color: 'var(--text-secondary)' }}>아이디어를 불러오는 중...</p>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="skeleton" style={{ width: '10rem', height: '2rem', borderRadius: 'var(--radius-lg)' }} />
+          <div className="skeleton" style={{ width: '8rem', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
         </div>
+        {/* Filter Skeleton */}
+        <div className="flex gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton" style={{ width: '5rem', height: '2rem', borderRadius: 'var(--radius-full)' }} />
+          ))}
+        </div>
+        {/* List Skeleton */}
+        <SkeletonList count={5} />
       </div>
     );
   }
@@ -67,11 +128,24 @@ export function IdeaList() {
             </p>
           </div>
 
-          {/* View Toggle */}
-          <div
-            className="flex gap-1 p-1 rounded-lg"
-            style={{ backgroundColor: 'var(--bg-subtle)' }}
-          >
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            {/* Export/Import Button */}
+            <button
+              onClick={() => setShowExportImport(true)}
+              className="btn btn-secondary"
+              style={{ padding: 'var(--space-2) var(--space-3)' }}
+              title="내보내기 / 가져오기"
+            >
+              <Download className="w-4 h-4" />
+              <Upload className="w-4 h-4" style={{ marginLeft: '-0.25rem' }} />
+            </button>
+
+            {/* View Toggle */}
+            <div
+              className="flex gap-1 p-1 rounded-lg"
+              style={{ backgroundColor: 'var(--bg-subtle)' }}
+            >
             <button
               onClick={() => setViewMode('card')}
               className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all"
@@ -96,6 +170,7 @@ export function IdeaList() {
               <List className="w-4 h-4" />
               목록형
             </button>
+            </div>
           </div>
         </div>
 
@@ -115,6 +190,76 @@ export function IdeaList() {
           ))}
         </div>
       </div>
+
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div
+          className="card mb-6 flex flex-wrap items-center justify-between gap-4"
+          style={{
+            padding: 'var(--space-4)',
+            backgroundColor: 'var(--color-primary-50)',
+            border: '1px solid var(--color-primary-200)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSelectAll}
+              className="icon-btn"
+              title={selectedIds.size === filteredIdeas.length ? '전체 해제' : '전체 선택'}
+            >
+              {selectedIds.size === filteredIdeas.length ? (
+                <CheckSquare className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} />
+              ) : (
+                <Square className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} />
+              )}
+            </button>
+            <span className="text-sm font-medium" style={{ color: 'var(--color-primary-700)' }}>
+              {selectedIds.size}개 선택됨
+            </span>
+            <button
+              onClick={clearSelection}
+              className="icon-btn"
+              title="선택 해제"
+            >
+              <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              상태 변경:
+            </span>
+            <button
+              onClick={() => handleBulkStatusChange('draft')}
+              disabled={bulkLoading}
+              className="badge status-draft cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50"
+            >
+              초안
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange('in-progress')}
+              disabled={bulkLoading}
+              className="badge status-in-progress cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50"
+            >
+              진행중
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange('completed')}
+              disabled={bulkLoading}
+              className="badge status-completed cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50"
+            >
+              완료
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange('archived')}
+              disabled={bulkLoading}
+              className="badge status-archived cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50"
+            >
+              보관됨
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {filteredIdeas.length === 0 ? (
@@ -148,13 +293,25 @@ export function IdeaList() {
 
               {/* Header */}
               <div className="flex items-start justify-between mb-3">
-                <Link
-                  to={`/idea/${idea.id}`}
-                  className="text-base font-semibold flex-1 mr-2 line-clamp-1"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {idea.title}
-                </Link>
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleSelect(idea.id); }}
+                    className="flex-shrink-0 mt-0.5"
+                  >
+                    {selectedIds.has(idea.id) ? (
+                      <CheckSquare className="w-4 h-4" style={{ color: 'var(--color-primary-600)' }} />
+                    ) : (
+                      <Square className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                    )}
+                  </button>
+                  <Link
+                    to={`/idea/${idea.id}`}
+                    className="text-base font-semibold flex-1 mr-2 line-clamp-1"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {idea.title}
+                  </Link>
+                </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Link
                     to={`/idea/${idea.id}`}
@@ -229,14 +386,25 @@ export function IdeaList() {
           {filteredIdeas.map((idea) => (
             <div key={idea.id} className="card card-hover group" style={{ padding: 'var(--space-4)' }}>
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <Link
-                    to={`/idea/${idea.id}`}
-                    className="text-base font-semibold mb-2 block"
-                    style={{ color: 'var(--text-primary)' }}
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleSelect(idea.id); }}
+                    className="flex-shrink-0 mt-1"
                   >
-                    {idea.title}
-                  </Link>
+                    {selectedIds.has(idea.id) ? (
+                      <CheckSquare className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} />
+                    ) : (
+                      <Square className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+                    )}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/idea/${idea.id}`}
+                      className="text-base font-semibold mb-2 block"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {idea.title}
+                    </Link>
                   <p
                     className="text-sm mb-3 line-clamp-2 leading-relaxed"
                     style={{ color: 'var(--text-secondary)' }}
@@ -258,6 +426,7 @@ export function IdeaList() {
                         +{idea.tags.length - 3}
                       </span>
                     )}
+                  </div>
                   </div>
                 </div>
 
@@ -283,6 +452,11 @@ export function IdeaList() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Export/Import Modal */}
+      {showExportImport && (
+        <ExportImport onClose={() => setShowExportImport(false)} />
       )}
     </div>
   );

@@ -303,7 +303,7 @@ export const aiService = {
             category: bestCategory[0],
             confidence: Math.round(confidence * 100) / 100
           });
-        } catch (error) {
+        } catch {
           reject(new Error('카테고리 분류 중 오류가 발생했습니다.'));
         }
       }, 800); // 800ms 지연
@@ -358,7 +358,7 @@ export const aiService = {
           resolve({
             tags: suggestedTags.slice(0, 5) // 최대 5개 태그
           });
-        } catch (error) {
+        } catch {
           reject(new Error('태그 제안 중 오류가 발생했습니다.'));
         }
       }, 600); // 600ms 지연

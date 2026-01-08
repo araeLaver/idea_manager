@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, X, Calendar as CalendarIcon, Clock } from 'lucide-reac
 import type { IdeaFormData, Idea } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { AIFeatures } from '../components/AIFeatures';
 
 export function IdeaForm() {
@@ -12,6 +13,7 @@ export function IdeaForm() {
   const isEdit = !!id;
   const { createIdea, updateIdea, getIdea } = useData();
   const { isGuest } = useAuth();
+  const { showToast } = useToast();
 
   const [formData, setFormData] = useState<IdeaFormData>({
     title: '',
@@ -62,12 +64,14 @@ export function IdeaForm() {
     try {
       if (isEdit && id) {
         await updateIdea(id, formData);
+        showToast('아이디어가 수정되었습니다.', 'success');
       } else {
         await createIdea(formData);
+        showToast('새 아이디어가 저장되었습니다.', 'success');
       }
       navigate('/');
     } catch {
-      alert('아이디어 저장에 실패했습니다.');
+      showToast('아이디어 저장에 실패했습니다.', 'error');
     }
   };
 
@@ -169,6 +173,8 @@ export function IdeaForm() {
             tags={formData.tags}
             onCategorySelect={handleCategorySelect}
             onTagsSelect={handleTagsSelect}
+            onTitleChange={(title) => setFormData({ ...formData, title })}
+            onDescriptionChange={(description) => setFormData({ ...formData, description })}
           />
 
           {/* Category & Status */}

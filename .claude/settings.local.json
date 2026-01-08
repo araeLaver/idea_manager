@@ -36,7 +36,10 @@
       "Bash(wc:*)",
       "Bash(npm run typecheck:*)",
       "Bash(npm run test:*)",
-      "WebFetch(domain:various-belva-untab-1a59bee2.koyeb.app)"
+      "WebFetch(domain:various-belva-untab-1a59bee2.koyeb.app)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run dev:server:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

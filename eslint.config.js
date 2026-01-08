@@ -29,4 +29,11 @@ export default tseslint.config([
       'no-empty-pattern': 'warn',
     },
   },
+  // Disable react-refresh for contexts and test files
+  {
+    files: ['**/contexts/**/*.{ts,tsx}', '**/test/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { IdeaList } from './pages/IdeaList';
@@ -12,6 +13,10 @@ import { KanbanBoard } from './pages/KanbanBoard';
 import { Dashboard } from './pages/Dashboard';
 import { History } from './pages/History';
 import { DailyMemos } from './pages/DailyMemos';
+import { Profile } from './pages/Profile';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
+import { Statistics } from './pages/Statistics';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
@@ -30,6 +35,8 @@ function ProtectedRoutes() {
         <Route path="edit/:id" element={<IdeaForm />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="memos" element={<DailyMemos />} />
+        <Route path="statistics" element={<Statistics />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
       {/* Redirect any other path to dashboard */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -44,6 +51,8 @@ function PublicRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       {/* Redirect any other path to the landing page */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -68,13 +77,15 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <Router>
-          <AuthProvider>
-            <DataProvider>
-              <AppRoutes />
-            </DataProvider>
-          </AuthProvider>
-        </Router>
+        <ToastProvider>
+          <Router>
+            <AuthProvider>
+              <DataProvider>
+                <AppRoutes />
+              </DataProvider>
+            </AuthProvider>
+          </Router>
+        </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

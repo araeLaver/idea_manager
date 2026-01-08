@@ -18,6 +18,7 @@ interface DataContextType {
   refreshIdeas: () => Promise<void>;
   refreshStats: () => Promise<void>;
   filterIdeas: (filters: { status?: string; category?: string; priority?: string }) => Promise<Idea[]>;
+  bulkUpdateStatus: (ids: string[], status: Idea['status']) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -197,6 +198,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const bulkUpdateStatus = async (ids: string[], status: Idea['status']): Promise<void> => {
+    // Handle guest mode - update each idea individually
+    if (isGuest) {
+      for (const id of ids) {
+        guestStorage.updateIdea(id, { status });
+      }
+      await refreshIdeas();
+      await refreshStats();
+      return;
+    }
+
+    // Handle authenticated mode - use bulk API
+    try {
+      await api.bulkUpdateStatus(ids, status);
+      await refreshIdeas();
+      await refreshStats();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to bulk update status');
+      throw err;
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated || isGuest) {
       refreshIdeas();
@@ -220,6 +243,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     refreshIdeas,
     refreshStats,
     filterIdeas,
+    bulkUpdateStatus,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

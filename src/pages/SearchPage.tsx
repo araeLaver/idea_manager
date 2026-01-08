@@ -1,33 +1,45 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, X, Filter, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass } from '../utils/labelMappings';
 
 export function SearchPage() {
   const { ideas, loading } = useData();
   const { isGuest } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const categories = useMemo(() => {
     return Array.from(new Set(ideas.map(idea => idea.category)));
   }, [ideas]);
 
-  const filteredIdeas = ideas.filter(idea => {
-    const matchesSearch = searchTerm === '' ||
-      idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      idea.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      idea.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === '' || idea.category === selectedCategory;
-    const matchesStatus = selectedStatus === '' || idea.status === selectedStatus;
-    const matchesPriority = selectedPriority === '' || idea.priority === selectedPriority;
-    return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
-  });
+  const filteredIdeas = useMemo(() => {
+    return ideas.filter(idea => {
+      const matchesSearch = debouncedSearchTerm === '' ||
+        idea.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        idea.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        idea.tags.some(tag => tag.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+      const matchesCategory = selectedCategory === '' || idea.category === selectedCategory;
+      const matchesStatus = selectedStatus === '' || idea.status === selectedStatus;
+      const matchesPriority = selectedPriority === '' || idea.priority === selectedPriority;
+      return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
+    });
+  }, [ideas, debouncedSearchTerm, selectedCategory, selectedStatus, selectedPriority]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -37,29 +49,6 @@ export function SearchPage() {
   };
 
   const hasActiveFilters = searchTerm || selectedCategory || selectedStatus || selectedPriority;
-
-  const getStatusClass = (status: string) => {
-    const classes: Record<string, string> = {
-      'draft': 'status-draft', 'in-progress': 'status-in-progress',
-      'completed': 'status-completed', 'archived': 'status-archived',
-    };
-    return classes[status] || 'status-draft';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = { 'draft': '초안', 'in-progress': '진행중', 'completed': '완료', 'archived': '보관됨' };
-    return labels[status] || status;
-  };
-
-  const getPriorityClass = (priority: string) => {
-    const classes: Record<string, string> = { 'low': 'priority-low', 'medium': 'priority-medium', 'high': 'priority-high' };
-    return classes[priority] || 'priority-medium';
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    const labels: Record<string, string> = { 'low': '낮음', 'medium': '보통', 'high': '높음' };
-    return labels[priority] || priority;
-  };
 
   if (loading) {
     return (

@@ -896,6 +896,70 @@ textarea::placeholder {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
 }
 
+/* Skip Link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 9999;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary-600);
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius-md) 0;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: none;
+}
+
+/* Focus styles for icon buttons */
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}
+
+/* Focus styles for nav links */
+.nav-link:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}
+
+/* Focus styles for cards */
+.card:focus-within {
+  box-shadow: var(--shadow-md), 0 0 0 2px var(--accent-primary);
+}
+
+/* Visible focus indicator for keyboard users */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Make focus visible only for keyboard navigation */
+.focus-visible-only:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -905,6 +969,17 @@ textarea::placeholder {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :focus-visible {
+    outline-width: 3px;
+  }
+
+  .btn {
+    border: 2px solid currentColor;
   }
 }
 
@@ -949,4 +1024,252 @@ textarea::placeholder {
 [data-theme="dark"] ::selection {
   background-color: var(--color-primary-800);
   color: var(--color-primary-100);
+}
+
+/* ========================================
+   16. TOAST ANIMATIONS
+   ======================================== */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out forwards;
+}
+
+/* ========================================
+   17. PAGE TRANSITION ANIMATIONS
+   ======================================== */
+/* Page transition container */
+.page-transition {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.page-transition.fade-enter {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition.fade-exit {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* Fade in element animation */
+.fade-in-element {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-in-element.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Scale fade animation */
+@keyframes scale-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-fade-in {
+  animation: scale-fade-in 0.2s ease-out forwards;
+}
+
+/* Slide up animation */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+/* Card hover animations */
+.card-hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Button press animation */
+.btn-press {
+  transition: transform 0.1s ease;
+}
+
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Stagger animation utility classes */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .page-transition,
+  .fade-in-element,
+  .animate-scale-fade-in,
+  .animate-slide-up,
+  .card-hover-lift,
+  .btn-press {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* ========================================
+   18. SKELETON LOADING STYLES
+   ======================================== */
+@keyframes skeleton-pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-muted) 25%,
+    var(--bg-subtle) 50%,
+    var(--bg-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Simpler pulse animation for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: skeleton-pulse 2s ease-in-out infinite;
+    background: var(--bg-muted);
+  }
+}
+
+/* Dark theme skeleton */
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-neutral-700) 25%,
+    var(--color-neutral-600) 50%,
+    var(--color-neutral-700) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ========================================
+   18. PRINT STYLES
+   ======================================== */
+@media print {
+  /* Hide non-essential elements */
+  .print-hide,
+  .header,
+  .banner,
+  .icon-btn,
+  .btn:not(.print-show),
+  nav,
+  footer,
+  .ai-assistant-container,
+  .ai-brainstorm-container {
+    display: none !important;
+  }
+
+  /* Reset background and colors for printing */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* Ensure content is visible */
+  .app-container,
+  .page-container,
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Print-friendly badges */
+  .badge,
+  .tag {
+    border: 1px solid #e5e7eb !important;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  section {
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  /* Links */
+  a {
+    color: black !important;
+    text-decoration: none !important;
+  }
+
+  /* Ensure text colors are readable */
+  * {
+    color: black !important;
+  }
+
+  /* Keep heading hierarchy visible */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: bold !important;
+  }
 }

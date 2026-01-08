@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bulbGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bulbGradient)"/>
+
+  <!-- Light bulb -->
+  <path d="M256 96c-56 0-104 48-104 104 0 40 24 72 56 88v32c0 24 16 40 40 40h16c24 0 40-16 40-40v-32c32-16 56-48 56-88 0-56-48-104-104-104z"
+        fill="#fff" opacity="0.95"/>
+
+  <!-- Filament lines -->
+  <path d="M224 200h64M216 224h80M224 248h64" stroke="#3b82f6" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- Base -->
+  <rect x="232" y="320" width="48" height="24" rx="8" fill="#fff" opacity="0.85"/>
+
+  <!-- Spark effects -->
+  <circle cx="192" cy="160" r="12" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="328" cy="184" r="10" fill="#fbbf24" opacity="0.7"/>
+  <circle cx="184" cy="224" r="8" fill="#fbbf24" opacity="0.8"/>
+</svg>

@@ -44,6 +44,7 @@ vi.mock('../../contexts/DataContext', () => ({
 // Mock keyboard shortcuts hook
 vi.mock('../../hooks/useKeyboardShortcuts', () => ({
   useKeyboardShortcuts: vi.fn(),
+  SHORTCUTS: [],
 }));
 
 // Mock Tutorial component
@@ -87,8 +88,8 @@ describe('Layout Component', () => {
   it('should render action buttons', () => {
     renderLayout();
 
-    // 검색 버튼
-    expect(screen.getByTitle('검색')).toBeInTheDocument();
+    // 검색 버튼 (단축키 표시 포함)
+    expect(screen.getByTitle(/검색/)).toBeInTheDocument();
     // 테마 토글 버튼
     expect(screen.getByTitle(/다크 모드|라이트 모드/)).toBeInTheDocument();
     // 새 아이디어 버튼 (hidden sm:flex이지만 DOM에 존재)

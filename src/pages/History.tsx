@@ -6,9 +6,9 @@ import {
   History as HistoryIcon, Calendar, Clock, TrendingUp,
   Search, Eye, Edit, Grid3X3, List, Tag
 } from 'lucide-react';
-import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass } from '../utils/labelMappings';
 
 type SortBy = 'created' | 'updated' | 'title' | 'status' | 'priority';
 type FilterBy = 'all' | 'draft' | 'in-progress' | 'completed' | 'archived';
@@ -46,39 +46,17 @@ export function History() {
         case 'updated': compareValue = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime(); break;
         case 'title': compareValue = a.title.localeCompare(b.title); break;
         case 'status': compareValue = a.status.localeCompare(b.status); break;
-        case 'priority':
+        case 'priority': {
           const priorityOrder = { high: 3, medium: 2, low: 1 };
           compareValue = priorityOrder[a.priority] - priorityOrder[b.priority];
           break;
+        }
       }
       return sortOrder === 'desc' ? -compareValue : compareValue;
     });
 
     return result;
   }, [ideas, searchTerm, filterBy, sortBy, sortOrder]);
-
-  const getStatusClass = (status: Idea['status']) => {
-    const classes: Record<string, string> = {
-      'draft': 'status-draft', 'in-progress': 'status-in-progress',
-      'completed': 'status-completed', 'archived': 'status-archived',
-    };
-    return classes[status] || 'status-draft';
-  };
-
-  const getStatusLabel = (status: Idea['status']) => {
-    const labels: Record<string, string> = { 'draft': '초안', 'in-progress': '진행중', 'completed': '완료', 'archived': '보관됨' };
-    return labels[status] || status;
-  };
-
-  const getPriorityClass = (priority: Idea['priority']) => {
-    const classes: Record<string, string> = { 'low': 'priority-low', 'medium': 'priority-medium', 'high': 'priority-high' };
-    return classes[priority] || 'priority-medium';
-  };
-
-  const getPriorityLabel = (priority: Idea['priority']) => {
-    const labels: Record<string, string> = { 'low': '낮음', 'medium': '보통', 'high': '높음' };
-    return labels[priority] || priority;
-  };
 
   const handleSortChange = (newSortBy: SortBy) => {
     if (sortBy === newSortBy) {
