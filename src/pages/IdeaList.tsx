@@ -9,6 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 import { getStatusLabel, getStatusClass, getStatusGradient } from '../utils/labelMappings';
 import { ExportImport } from '../components/ExportImport';
 import { SkeletonList } from '../components/Skeleton';
+import { ConfirmModal } from '../components/ConfirmModal';
 import type { IdeaStatus } from '../types';
 
 export function IdeaList() {
@@ -20,21 +21,34 @@ export function IdeaList() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [showExportImport, setShowExportImport] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const handleDelete = async (id: string) => {
-    if (confirm('이 아이디어를 삭제하시겠습니까?')) {
-      try {
-        await deleteIdea(id);
-        setSelectedIds(prev => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
-        showToast('아이디어가 삭제되었습니다.', 'success');
-      } catch {
-        showToast('아이디어 삭제에 실패했습니다.', 'error');
-      }
+  const handleDeleteClick = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteIdea(deleteTarget);
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(deleteTarget);
+        return next;
+      });
+      showToast('아이디어가 삭제되었습니다.', 'success');
+      setDeleteTarget(null);
+    } catch {
+      showToast('아이디어 삭제에 실패했습니다.', 'error');
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteTarget(null);
   };
 
   const toggleSelect = (id: string) => {
@@ -266,12 +280,30 @@ export function IdeaList() {
         <div className="card">
           <div className="empty-state">
             <Lightbulb className="empty-state-icon" />
-            <h3 className="empty-state-title">아이디어가 없습니다</h3>
-            <p className="empty-state-description">새로운 아이디어를 추가해보세요</p>
-            <Link to="/new" className="btn btn-primary">
-              <Plus className="w-4 h-4" />
-              <span>첫 번째 아이디어 추가</span>
-            </Link>
+            {ideas.length === 0 ? (
+              <>
+                <h3 className="empty-state-title">아이디어가 없습니다</h3>
+                <p className="empty-state-description">새로운 아이디어를 추가해보세요</p>
+                <Link to="/new" className="btn btn-primary">
+                  <Plus className="w-4 h-4" />
+                  <span>첫 번째 아이디어 추가</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <h3 className="empty-state-title">조건에 맞는 아이디어가 없습니다</h3>
+                <p className="empty-state-description">다른 필터를 선택하거나 새 아이디어를 추가해보세요</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setFilter('all')} className="btn btn-secondary">
+                    전체 보기
+                  </button>
+                  <Link to="/new" className="btn btn-primary">
+                    <Plus className="w-4 h-4" />
+                    <span>새 아이디어</span>
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : viewMode === 'card' ? (
@@ -321,7 +353,7 @@ export function IdeaList() {
                     <Eye className="w-3.5 h-3.5" />
                   </Link>
                   <button
-                    onClick={() => handleDelete(idea.id)}
+                    onClick={() => handleDeleteClick(idea.id)}
                     className="icon-btn"
                     style={{
                       width: '1.75rem',
@@ -436,7 +468,7 @@ export function IdeaList() {
                       <Eye className="w-4 h-4" />
                     </Link>
                     <button
-                      onClick={() => handleDelete(idea.id)}
+                      onClick={() => handleDeleteClick(idea.id)}
                       className="icon-btn"
                       style={{ color: 'var(--color-error-500)' }}
                     >
@@ -458,6 +490,19 @@ export function IdeaList() {
       {showExportImport && (
         <ExportImport onClose={() => setShowExportImport(false)} />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        title="아이디어 삭제"
+        message="이 아이디어를 삭제하시겠습니까? 삭제된 아이디어는 복구할 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

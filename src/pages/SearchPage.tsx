@@ -5,7 +5,8 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass } from '../utils/labelMappings';
+import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass, STATUS_LABELS, PRIORITY_LABELS } from '../utils/labelMappings';
+import type { IdeaStatus, IdeaPriority } from '../types';
 
 export function SearchPage() {
   const { ideas, loading } = useData();
@@ -111,19 +112,18 @@ export function SearchPage() {
             <label className="form-label">상태</label>
             <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
               <option value="">전체</option>
-              <option value="draft">초안</option>
-              <option value="in-progress">진행중</option>
-              <option value="completed">완료</option>
-              <option value="archived">보관됨</option>
+              {(Object.entries(STATUS_LABELS) as [IdeaStatus, string][]).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </div>
           <div>
             <label className="form-label">우선순위</label>
             <select value={selectedPriority} onChange={(e) => setSelectedPriority(e.target.value)}>
               <option value="">전체</option>
-              <option value="low">낮음</option>
-              <option value="medium">보통</option>
-              <option value="high">높음</option>
+              {(Object.entries(PRIORITY_LABELS) as [IdeaPriority, string][]).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </div>
         </div>

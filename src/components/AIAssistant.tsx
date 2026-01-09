@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bot, Lightbulb, Wand2, Sparkles, Loader2, ChevronRight } from 'lucide-react';
 import { aiService } from '../services/aiService';
 import { useData } from '../contexts/DataContext';
-import { getPriorityLabel, getPriorityColor } from '../utils/labelMappings';
+import { useToast } from '../contexts/ToastContext';
+import { getPriorityLabel, getPriorityColor, CATEGORIES } from '../utils/labelMappings';
 import type { IdeaPriority } from '../types';
 
 interface AISuggestion {
@@ -20,8 +21,24 @@ export function AIAssistant() {
   const [keyword, setKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const { createIdea } = useData();
+  const { showToast } = useToast();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const categories = ['기술', '비즈니스', '디자인', '교육', '헬스케어', '환경', '서비스', '엔터테인먼트'];
+  // Handle Escape key and focus management
+  useEffect(() => {
+    if (!isOpen) return;
+
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   const generateSuggestions = async () => {
     setLoading(true);
@@ -45,9 +62,16 @@ export function AIAssistant() {
         status: 'draft',
         tags: suggestion.tags,
       });
-      alert('아이디어가 성공적으로 생성되었습니다!');
+      showToast('아이디어가 성공적으로 생성되었습니다!', 'success');
     } catch {
-      alert('아이디어 생성에 실패했습니다.');
+      showToast('아이디어 생성에 실패했습니다.', 'error');
+    }
+  };
+
+  // Handle backdrop click
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      setIsOpen(false);
     }
   };
 
@@ -57,27 +81,36 @@ export function AIAssistant() {
         onClick={() => setIsOpen(true)}
         className="btn-ghost p-2 rounded-xl hover:bg-hover transition-all group fixed bottom-6 right-6 z-40 shadow-xl bg-accent text-white"
         title="AI 어시스턴트"
+        aria-label="AI 어시스턴트 열기"
       >
-        <Bot className="h-6 w-6 transition-transform group-hover:scale-110" />
+        <Bot className="h-6 w-6 transition-transform group-hover:scale-110" aria-hidden="true" />
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-assistant-title"
+          onClick={handleBackdropClick}
+        >
           <div className="bg-tertiary rounded-2xl shadow-2xl max-w-4xl w-full max-h-90vh overflow-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-accent">
+                  <div className="p-3 rounded-xl bg-accent" aria-hidden="true">
                     <Bot className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-primary">AI 어시스턴트</h2>
+                    <h2 id="ai-assistant-title" className="text-xl font-bold text-primary">AI 어시스턴트</h2>
                     <p className="text-sm text-secondary">창의적인 아이디어를 발견해보세요</p>
                   </div>
                 </div>
                 <button
+                  ref={closeButtonRef}
                   onClick={() => setIsOpen(false)}
                   className="btn-ghost p-2 rounded-xl hover:bg-hover transition-all"
+                  aria-label="닫기"
                 >
                   ✕
                 </button>
@@ -114,7 +147,7 @@ export function AIAssistant() {
                       className="w-full px-3 py-2 border border-primary rounded-lg text-sm"
                     >
                       <option value="">모든 카테고리</option>
-                      {categories.map(category => (
+                      {CATEGORIES.map(category => (
                         <option key={category} value={category}>{category}</option>
                       ))}
                     </select>

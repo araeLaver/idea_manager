@@ -16,6 +16,13 @@ const generateId = (): string => {
   return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
+/** Helper to get a future date string */
+const getFutureDate = (daysFromNow: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return date.toISOString().split('T')[0];
+};
+
 /** Sample ideas for new guest users */
 const SAMPLE_IDEAS: Omit<Idea, 'id' | 'createdAt' | 'updatedAt'>[] = [
   {
@@ -30,6 +37,9 @@ const SAMPLE_IDEAS: Omit<Idea, 'id' | 'createdAt' | 'updatedAt'>[] = [
     potentialRevenue: '프리미엄 구독 모델, 월 $4.99',
     resources: '모바일 개발자 2명, UI/UX 디자이너 1명, 백엔드 개발자 1명',
     timeline: '개발 3개월, 베타 테스트 1개월',
+    deadline: getFutureDate(7),
+    reminderEnabled: true,
+    reminderDays: 3,
   },
   {
     title: '로컬 맛집 큐레이션 플랫폼',
@@ -43,6 +53,9 @@ const SAMPLE_IDEAS: Omit<Idea, 'id' | 'createdAt' | 'updatedAt'>[] = [
     potentialRevenue: '광고 및 프로모션 수익',
     resources: '풀스택 개발자 1명, 콘텐츠 에디터 2명',
     timeline: '',
+    deadline: getFutureDate(14),
+    reminderEnabled: true,
+    reminderDays: 5,
   },
   {
     title: 'AI 기반 학습 도우미',

@@ -5,6 +5,8 @@ import { Calendar, Edit3, Save, Trash2, Plus, X } from 'lucide-react';
 import api from '../services/api';
 import { guestStorage } from '../services/guestStorage';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 interface MemoEntry {
   id: string;
@@ -14,10 +16,13 @@ interface MemoEntry {
 
 export function DailyMemos() {
   const { isGuest } = useAuth();
+  const { showToast } = useToast();
   const [memos, setMemos] = useState<MemoEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editMemo, setEditMemo] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const loadMemos = useCallback(async () => {
     try {
@@ -77,7 +82,7 @@ export function DailyMemos() {
       setEditMemo('');
       await loadMemos();
     } catch {
-      alert('메모 저장에 실패했습니다.');
+      showToast('메모 저장에 실패했습니다.', 'error');
     }
   };
 
@@ -86,18 +91,25 @@ export function DailyMemos() {
     setEditMemo('');
   };
 
-  const handleDelete = async (date: string) => {
-    if (confirm('이 메모를 삭제하시겠습니까?')) {
-      try {
-        if (isGuest) {
-          guestStorage.deleteMemoByDate(date);
-        } else {
-          await api.deleteMemoByDate(date);
-        }
-        await loadMemos();
-      } catch {
-        alert('메모 삭제에 실패했습니다.');
+  const handleDeleteClick = (date: string) => {
+    setDeleteTarget(date);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      if (isGuest) {
+        guestStorage.deleteMemoByDate(deleteTarget);
+      } else {
+        await api.deleteMemoByDate(deleteTarget);
       }
+      await loadMemos();
+      setDeleteTarget(null);
+    } catch {
+      showToast('메모 삭제에 실패했습니다.', 'error');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -224,7 +236,7 @@ export function DailyMemos() {
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(date)}
+                          onClick={() => handleDeleteClick(date)}
                           className="icon-btn"
                           style={{ color: 'var(--color-error-500)' }}
                         >
@@ -267,6 +279,19 @@ export function DailyMemos() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+        title="메모 삭제"
+        message="이 메모를 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

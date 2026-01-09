@@ -9,7 +9,9 @@ const updateSW = registerSW({
   },
   onOfflineReady() {
     // 오프라인 사용 준비 완료
-    console.log('오프라인 사용 준비 완료');
+    if (import.meta.env.DEV) {
+      console.log('오프라인 사용 준비 완료');
+    }
   },
   onRegistered(registration) {
     // 서비스 워커 등록 완료

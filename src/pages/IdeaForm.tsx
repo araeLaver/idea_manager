@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
-import type { IdeaFormData, Idea } from '../types';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams, Link, useBlocker } from 'react-router-dom';
+import { ArrowLeft, Plus, X, Calendar as CalendarIcon, Clock, Bell, AlertTriangle } from 'lucide-react';
+import type { IdeaFormData, Idea, IdeaStatus, IdeaPriority } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { AIFeatures } from '../components/AIFeatures';
+import { STATUS_LABELS, PRIORITY_LABELS } from '../utils/labelMappings';
+import { validateIdeaForm, isFormDataEqual } from '../utils/validation';
 
 export function IdeaForm() {
   const navigate = useNavigate();
@@ -26,7 +28,10 @@ export function IdeaForm() {
     targetMarket: '',
     potentialRevenue: '',
     resources: '',
-    timeline: ''
+    timeline: '',
+    deadline: '',
+    reminderEnabled: false,
+    reminderDays: 3
   });
 
   const [scheduleStartDate, setScheduleStartDate] = useState('');
@@ -34,12 +39,51 @@ export function IdeaForm() {
   const [scheduleStartTime, setScheduleStartTime] = useState('09:00');
   const [scheduleEndTime, setScheduleEndTime] = useState('18:00');
   const [tagInput, setTagInput] = useState('');
+  const [initialFormData, setInitialFormData] = useState<IdeaFormData | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingIdea, setLoadingIdea] = useState(isEdit);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Check if form has unsaved changes (memoized for performance)
+  const isDirty = useMemo(() => {
+    if (!initialFormData) return false;
+    return !isFormDataEqual(formData, initialFormData);
+  }, [formData, initialFormData]);
+
+  // Block navigation when form has unsaved changes
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      !isSubmitting &&
+      isDirty &&
+      currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Set initial form data for new forms
+  useEffect(() => {
+    if (!isEdit && !initialFormData) {
+      setInitialFormData({ ...formData });
+    }
+  }, [isEdit, initialFormData, formData]);
+
+  // Handle browser back/refresh with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && !isSubmitting) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, isSubmitting]);
 
   useEffect(() => {
     if (isEdit && id) {
+      setLoadingIdea(true);
       getIdea(id).then(idea => {
         if (idea) {
-          setFormData({
+          const loadedData: IdeaFormData = {
             title: idea.title,
             description: idea.description,
             category: idea.category,
@@ -50,17 +94,39 @@ export function IdeaForm() {
             targetMarket: idea.targetMarket || '',
             potentialRevenue: idea.potentialRevenue || '',
             resources: idea.resources || '',
-            timeline: idea.timeline || ''
-          });
+            timeline: idea.timeline || '',
+            deadline: idea.deadline || '',
+            reminderEnabled: idea.reminderEnabled || false,
+            reminderDays: idea.reminderDays || 3
+          };
+          setFormData(loadedData);
+          setInitialFormData(loadedData);
         } else {
           navigate('/');
         }
+        setLoadingIdea(false);
       });
     }
   }, [id, isEdit, navigate, getIdea]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate form
+    const validation = validateIdeaForm({
+      title: formData.title,
+      description: formData.description,
+      category: formData.category
+    });
+
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      showToast(validation.errors[0], 'error');
+      return;
+    }
+
+    setValidationErrors([]);
+    setIsSubmitting(true);
     try {
       if (isEdit && id) {
         await updateIdea(id, formData);
@@ -71,6 +137,7 @@ export function IdeaForm() {
       }
       navigate('/');
     } catch {
+      setIsSubmitting(false);
       showToast('아이디어 저장에 실패했습니다.', 'error');
     }
   };
@@ -116,6 +183,81 @@ export function IdeaForm() {
     }
   };
 
+  if (loadingIdea) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        {/* Back Link */}
+        <div className="mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm font-medium transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            목록으로
+          </Link>
+        </div>
+
+        {/* Loading Skeleton */}
+        <div className="card" style={{ padding: 'var(--space-8)' }}>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="skeleton" style={{ width: '10rem', height: '1.75rem', borderRadius: 'var(--radius-md)' }} />
+          </div>
+
+          {/* Title skeleton */}
+          <div className="form-group">
+            <div className="skeleton" style={{ width: '3rem', height: '0.875rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+            <div className="skeleton" style={{ width: '100%', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+          </div>
+
+          {/* Description skeleton */}
+          <div className="form-group">
+            <div className="skeleton" style={{ width: '3rem', height: '0.875rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+            <div className="skeleton" style={{ width: '100%', height: '6rem', borderRadius: 'var(--radius-lg)' }} />
+          </div>
+
+          {/* Category & Status skeleton */}
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div>
+              <div className="skeleton" style={{ width: '4rem', height: '0.875rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+              <div className="skeleton" style={{ width: '100%', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+            </div>
+            <div>
+              <div className="skeleton" style={{ width: '3rem', height: '0.875rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+              <div className="skeleton" style={{ width: '100%', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+            </div>
+          </div>
+
+          {/* Priority skeleton */}
+          <div className="form-group">
+            <div className="skeleton" style={{ width: '4rem', height: '0.875rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+            <div className="skeleton" style={{ width: '100%', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+          </div>
+
+          {/* Tags skeleton */}
+          <div className="form-group">
+            <div className="skeleton" style={{ width: '3rem', height: '0.875rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+            <div className="flex gap-2">
+              <div className="skeleton flex-1" style={{ height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+              <div className="skeleton" style={{ width: '2.5rem', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ width: '4rem', height: '1.5rem', borderRadius: 'var(--radius-full)' }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Actions skeleton */}
+          <div className="flex justify-end gap-3 pt-4">
+            <div className="skeleton" style={{ width: '5rem', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+            <div className="skeleton" style={{ width: '6rem', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto">
       {/* Back Link */}
@@ -142,6 +284,30 @@ export function IdeaForm() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div
+              className="mb-6 p-4 rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-error-50)',
+                border: '1px solid var(--color-error-200)'
+              }}
+              role="alert"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-4 h-4" style={{ color: 'var(--color-error-500)' }} />
+                <span className="font-medium" style={{ color: 'var(--color-error-700)' }}>
+                  입력 오류
+                </span>
+              </div>
+              <ul className="list-disc list-inside text-sm" style={{ color: 'var(--color-error-600)' }}>
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Title */}
           <div className="form-group">
             <label className="form-label">제목 *</label>
@@ -149,9 +315,17 @@ export function IdeaForm() {
               type="text"
               required
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value });
+                if (validationErrors.length > 0) setValidationErrors([]);
+              }}
               placeholder="아이디어 제목을 입력하세요"
+              maxLength={200}
+              aria-invalid={validationErrors.some(e => e.includes('제목'))}
             />
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {formData.title.length}/200
+            </span>
           </div>
 
           {/* Description */}
@@ -160,10 +334,18 @@ export function IdeaForm() {
             <textarea
               required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value });
+                if (validationErrors.length > 0) setValidationErrors([]);
+              }}
               rows={4}
               placeholder="아이디어에 대한 설명을 입력하세요"
+              maxLength={5000}
+              aria-invalid={validationErrors.some(e => e.includes('설명'))}
             />
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {formData.description.length}/5000
+            </span>
           </div>
 
           {/* AI Features */}
@@ -185,20 +367,24 @@ export function IdeaForm() {
                 type="text"
                 required
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, category: e.target.value });
+                  if (validationErrors.length > 0) setValidationErrors([]);
+                }}
                 placeholder="예: 웹서비스, 모바일앱"
+                maxLength={50}
+                aria-invalid={validationErrors.some(e => e.includes('카테고리'))}
               />
             </div>
             <div>
               <label className="form-label">상태</label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as Idea['status'] })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as IdeaStatus })}
               >
-                <option value="draft">초안</option>
-                <option value="in-progress">진행중</option>
-                <option value="completed">완료</option>
-                <option value="archived">보관됨</option>
+                {(Object.entries(STATUS_LABELS) as [IdeaStatus, string][]).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -208,12 +394,82 @@ export function IdeaForm() {
             <label className="form-label">우선순위</label>
             <select
               value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as Idea['priority'] })}
+              onChange={(e) => setFormData({ ...formData, priority: e.target.value as IdeaPriority })}
             >
-              <option value="low">낮음</option>
-              <option value="medium">보통</option>
-              <option value="high">높음</option>
+              {(Object.entries(PRIORITY_LABELS) as [IdeaPriority, string][]).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
+          </div>
+
+          {/* Deadline & Reminder */}
+          <div className="form-group">
+            <label className="form-label flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              마감일 및 알림
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium mb-1.5 flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                  <CalendarIcon className="w-3 h-3" />
+                  마감일
+                </label>
+                <input
+                  type="date"
+                  value={formData.deadline || ''}
+                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>
+                  알림 설정
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.reminderEnabled || false}
+                      onChange={(e) => setFormData({ ...formData, reminderEnabled: e.target.checked })}
+                      className="w-4 h-4 rounded"
+                      style={{ accentColor: 'var(--color-primary-600)' }}
+                    />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>알림 받기</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            {formData.reminderEnabled && (
+              <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'var(--bg-subtle)' }}>
+                <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-secondary)' }}>
+                  마감일 며칠 전에 알림을 받으시겠습니까?
+                </label>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={formData.reminderDays || 3}
+                    onChange={(e) => setFormData({ ...formData, reminderDays: parseInt(e.target.value) })}
+                    style={{ maxWidth: '120px' }}
+                  >
+                    <option value={1}>1일 전</option>
+                    <option value={2}>2일 전</option>
+                    <option value={3}>3일 전</option>
+                    <option value={5}>5일 전</option>
+                    <option value={7}>7일 전</option>
+                    <option value={14}>14일 전</option>
+                  </select>
+                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                    {formData.deadline ? (
+                      (() => {
+                        const deadlineDate = new Date(formData.deadline);
+                        const reminderDate = new Date(deadlineDate);
+                        reminderDate.setDate(reminderDate.getDate() - (formData.reminderDays || 3));
+                        return `(${reminderDate.toLocaleDateString('ko-KR')}에 알림)`;
+                      })()
+                    ) : '(마감일을 설정해주세요)'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tags */}
@@ -380,6 +636,44 @@ export function IdeaForm() {
           </div>
         </form>
       </div>
+
+      {/* Unsaved Changes Confirmation Modal */}
+      {blocker.state === 'blocked' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="card" style={{ padding: 'var(--space-6)', maxWidth: '400px', width: '100%' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="p-2 rounded-full"
+                style={{ backgroundColor: 'var(--color-warning-100)' }}
+              >
+                <AlertTriangle className="w-5 h-5" style={{ color: 'var(--color-warning-600)' }} />
+              </div>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                저장하지 않은 변경사항
+              </h3>
+            </div>
+            <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
+              작성 중인 내용이 있습니다. 저장하지 않고 나가시겠습니까?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => blocker.reset?.()}
+                className="btn btn-secondary"
+              >
+                계속 작성
+              </button>
+              <button
+                type="button"
+                onClick={() => blocker.proceed?.()}
+                className="btn btn-danger"
+              >
+                저장 안 함
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

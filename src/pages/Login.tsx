@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Lightbulb, Mail, Lock, ArrowRight, Database, CheckCircle } from 'lucide-react';
+import { validateLoginForm } from '../utils/validation';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -19,10 +20,18 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validate form
+    const validation = validateLoginForm(email, password);
+    if (!validation.isValid) {
+      setError(validation.errors[0]);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const result = await login(email, password, guestDataExists && migrateData);
+      const result = await login(email.trim(), password, guestDataExists && migrateData);
       if (result) {
         setMigrationResult(result);
         setTimeout(() => navigate('/'), 2000);

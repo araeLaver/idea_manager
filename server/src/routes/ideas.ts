@@ -19,7 +19,7 @@ const VALID_PRIORITIES = ['low', 'medium', 'high'];
 
 // Validation helper
 const validateIdeaInput = (body: Record<string, unknown>): { valid: boolean; error?: string } => {
-  const { title, description, category, tags, status, priority, notes, targetMarket, potentialRevenue, resources, timeline } = body;
+  const { title, description, category, tags, status, priority, notes, targetMarket, potentialRevenue, resources, timeline, deadline, reminderEnabled, reminderDays } = body;
 
   if (title && (typeof title !== 'string' || title.length > MAX_TITLE_LENGTH)) {
     return { valid: false, error: `Title must be ${MAX_TITLE_LENGTH} characters or less` };
@@ -51,6 +51,23 @@ const validateIdeaInput = (body: Record<string, unknown>): { valid: boolean; err
       return { valid: false, error: `${field} must be ${MAX_TEXT_FIELD_LENGTH} characters or less` };
     }
   }
+  // Validate deadline format (YYYY-MM-DD)
+  if (deadline && typeof deadline === 'string' && deadline !== '') {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(deadline)) {
+      return { valid: false, error: 'Deadline must be in YYYY-MM-DD format' };
+    }
+  }
+  // Validate reminderEnabled
+  if (reminderEnabled !== undefined && typeof reminderEnabled !== 'boolean') {
+    return { valid: false, error: 'reminderEnabled must be a boolean' };
+  }
+  // Validate reminderDays
+  if (reminderDays !== undefined) {
+    if (typeof reminderDays !== 'number' || reminderDays < 1 || reminderDays > 30) {
+      return { valid: false, error: 'reminderDays must be a number between 1 and 30' };
+    }
+  }
   return { valid: true };
 };
 
@@ -71,6 +88,9 @@ interface DbRow {
   potential_revenue: string;
   resources: string;
   timeline: string;
+  deadline: string | null;
+  reminder_enabled: boolean;
+  reminder_days: number;
   created_at: string;
   updated_at: string;
 }
@@ -88,6 +108,9 @@ const mapRowToIdea = (row: DbRow) => ({
   potentialRevenue: row.potential_revenue,
   resources: row.resources,
   timeline: row.timeline,
+  deadline: row.deadline,
+  reminderEnabled: row.reminder_enabled,
+  reminderDays: row.reminder_days,
   createdAt: row.created_at,
   updatedAt: row.updated_at
 });
@@ -208,7 +231,10 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       targetMarket,
       potentialRevenue,
       resources,
-      timeline
+      timeline,
+      deadline,
+      reminderEnabled,
+      reminderDays
     } = req.body;
 
     if (!title) {
@@ -224,8 +250,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     const result = await query(
       `INSERT INTO idea_manager.ideas (
         user_id, title, description, category, tags, status, priority,
-        notes, target_market, potential_revenue, resources, timeline
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        notes, target_market, potential_revenue, resources, timeline,
+        deadline, reminder_enabled, reminder_days
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *`,
       [
         req.userId,
@@ -239,7 +266,10 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         targetMarket || '',
         potentialRevenue || '',
         resources || '',
-        timeline || ''
+        timeline || '',
+        deadline || null,
+        reminderEnabled || false,
+        reminderDays || 3
       ]
     );
 
@@ -273,7 +303,10 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       targetMarket,
       potentialRevenue,
       resources,
-      timeline
+      timeline,
+      deadline,
+      reminderEnabled,
+      reminderDays
     } = req.body;
 
     // Validate input
@@ -309,8 +342,11 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
           target_market = COALESCE($8, target_market),
           potential_revenue = COALESCE($9, potential_revenue),
           resources = COALESCE($10, resources),
-          timeline = COALESCE($11, timeline)
-        WHERE id = $12 AND user_id = $13
+          timeline = COALESCE($11, timeline),
+          deadline = COALESCE($12, deadline),
+          reminder_enabled = COALESCE($13, reminder_enabled),
+          reminder_days = COALESCE($14, reminder_days)
+        WHERE id = $15 AND user_id = $16
         RETURNING *`,
         [
           title,
@@ -324,6 +360,9 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
           potentialRevenue,
           resources,
           timeline,
+          deadline,
+          reminderEnabled,
+          reminderDays,
           req.params.id,
           req.userId
         ]

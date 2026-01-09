@@ -17,6 +17,9 @@ export interface Idea {
   potentialRevenue?: string;
   resources?: string;
   timeline?: string;
+  deadline?: string;
+  reminderEnabled?: boolean;
+  reminderDays?: number; // 마감일 며칠 전 알림
 }
 
 export interface IdeaFormData {
@@ -31,6 +34,22 @@ export interface IdeaFormData {
   potentialRevenue?: string;
   resources?: string;
   timeline?: string;
+  deadline?: string;
+  reminderEnabled?: boolean;
+  reminderDays?: number;
+}
+
+// Notification types
+export type NotificationType = 'deadline' | 'reminder' | 'info' | 'success' | 'warning';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  ideaId?: string;
+  createdAt: string;
+  read: boolean;
 }
 
 // User types

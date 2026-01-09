@@ -9,15 +9,20 @@ import {
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass } from '../utils/labelMappings';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getIdea, deleteIdea } = useData();
   const { isGuest } = useAuth();
+  const { showToast } = useToast();
   const [idea, setIdea] = useState<Idea | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -33,14 +38,20 @@ export function IdeaDetail() {
     }
   }, [id, navigate, getIdea]);
 
-  const handleDelete = async () => {
-    if (id && confirm('이 아이디어를 삭제하시겠습니까?')) {
-      try {
-        await deleteIdea(id);
-        navigate('/');
-      } catch {
-        alert('아이디어 삭제에 실패했습니다.');
-      }
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!id) return;
+    setDeleteLoading(true);
+    try {
+      await deleteIdea(id);
+      navigate('/');
+    } catch {
+      showToast('아이디어 삭제에 실패했습니다.', 'error');
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -82,7 +93,7 @@ export function IdeaDetail() {
             <Edit className="w-4 h-4" />
             <span>수정</span>
           </Link>
-          <button onClick={handleDelete} className="btn btn-danger print-hide">
+          <button onClick={handleDeleteClick} className="btn btn-danger print-hide">
             <Trash2 className="w-4 h-4" />
             <span>삭제</span>
           </button>
@@ -219,6 +230,19 @@ export function IdeaDetail() {
           </section>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteModal(false)}
+        title="아이디어 삭제"
+        message="이 아이디어를 삭제하시겠습니까? 삭제된 아이디어는 복구할 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

@@ -132,9 +132,28 @@ export const initDatabase = async () => {
         potential_revenue TEXT,
         resources TEXT,
         timeline TEXT,
+        deadline DATE,
+        reminder_enabled BOOLEAN DEFAULT FALSE,
+        reminder_days INTEGER DEFAULT 3,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add new columns if they don't exist (for existing databases)
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'idea_manager' AND table_name = 'ideas' AND column_name = 'deadline') THEN
+          ALTER TABLE idea_manager.ideas ADD COLUMN deadline DATE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'idea_manager' AND table_name = 'ideas' AND column_name = 'reminder_enabled') THEN
+          ALTER TABLE idea_manager.ideas ADD COLUMN reminder_enabled BOOLEAN DEFAULT FALSE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'idea_manager' AND table_name = 'ideas' AND column_name = 'reminder_days') THEN
+          ALTER TABLE idea_manager.ideas ADD COLUMN reminder_days INTEGER DEFAULT 3;
+        END IF;
+      END $$;
     `);
 
     // Daily memos table

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Lightbulb, Mail, Lock, User, Database, CheckCircle } from 'lucide-react';
+import { validateRegisterForm } from '../utils/validation';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -18,43 +19,21 @@ export default function Register() {
   const guestDataExists = isGuest && hasGuestData();
   const guestDataInfo = guestDataExists ? getGuestDataInfo() : null;
 
-  // Password validation matching server requirements
-  const validatePassword = (pwd: string): string[] => {
-    const errors: string[] = [];
-    if (pwd.length < 8) {
-      errors.push('8자 이상');
-    }
-    if (!/[A-Z]/.test(pwd)) {
-      errors.push('대문자 포함');
-    }
-    if (!/[a-z]/.test(pwd)) {
-      errors.push('소문자 포함');
-    }
-    if (!/[0-9]/.test(pwd)) {
-      errors.push('숫자 포함');
-    }
-    return errors;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (password !== confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다');
-      return;
-    }
-
-    const passwordErrors = validatePassword(password);
-    if (passwordErrors.length > 0) {
-      setError(`비밀번호 요구사항: ${passwordErrors.join(', ')}`);
+    // Validate form using centralized validation
+    const validation = validateRegisterForm(name, email, password, confirmPassword);
+    if (!validation.isValid) {
+      setError(validation.errors[0]);
       return;
     }
 
     setLoading(true);
 
     try {
-      const result = await register(email, password, name, guestDataExists && migrateData);
+      const result = await register(email.trim(), password, name.trim(), guestDataExists && migrateData);
       if (result) {
         setMigrationResult(result);
         // Show success briefly then navigate

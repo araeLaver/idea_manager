@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass } from '../utils/labelMappings';
+import { getStatusLabel, getStatusClass, getPriorityLabel, getPriorityClass, STATUS_LABELS } from '../utils/labelMappings';
+import type { IdeaStatus } from '../types';
 
 type SortBy = 'created' | 'updated' | 'title' | 'status' | 'priority';
 type FilterBy = 'all' | 'draft' | 'in-progress' | 'completed' | 'archived';
@@ -143,10 +144,9 @@ export function History() {
         </div>
         <select value={filterBy} onChange={(e) => setFilterBy(e.target.value as FilterBy)}>
           <option value="all">모든 상태</option>
-          <option value="draft">초안</option>
-          <option value="in-progress">진행중</option>
-          <option value="completed">완료</option>
-          <option value="archived">보관됨</option>
+          {(Object.entries(STATUS_LABELS) as [IdeaStatus, string][]).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
         </select>
         <select value={sortBy} onChange={(e) => handleSortChange(e.target.value as SortBy)}>
           <option value="updated">최근 수정일</option>

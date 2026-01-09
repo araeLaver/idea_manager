@@ -10,6 +10,7 @@ import { PageTransition } from './PageTransition';
 import { PWAPrompt } from './PWAPrompt';
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 import { ExportImport } from './ExportImport';
+import { NotificationCenter } from './NotificationCenter';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 export function Layout() {
@@ -47,14 +48,20 @@ export function Layout() {
 
   // 비회원 첫 진입 시 자동 튜토리얼 시작
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
     if (isGuest && location.pathname === '/') {
       const shouldShowTutorial = localStorage.getItem('showTutorial');
       if (shouldShowTutorial === 'true') {
         localStorage.removeItem('showTutorial');
         // 페이지 렌더링 후 튜토리얼 시작
-        setTimeout(() => setRunTutorial(true), 500);
+        timer = setTimeout(() => setRunTutorial(true), 500);
       }
     }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isGuest, location.pathname]);
 
   const navItems = [
@@ -181,6 +188,9 @@ export function Layout() {
               >
                 <Search className="w-5 h-5" aria-hidden="true" />
               </button>
+
+              {/* Notifications */}
+              <NotificationCenter />
 
               {/* Theme Toggle */}
               <button

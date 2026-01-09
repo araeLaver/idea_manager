@@ -25,6 +25,8 @@ import {
 import type { Idea } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Link } from 'react-router-dom';
 
 interface Column {
@@ -175,7 +177,10 @@ function KanbanColumn({ column, ideas, onDelete }: KanbanColumnProps) {
 export function KanbanBoard() {
   const { ideas, loading, deleteIdea, updateIdea } = useData();
   const { isGuest } = useAuth();
+  const { showToast } = useToast();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
 
   const columns: Column[] = [
@@ -185,13 +190,20 @@ export function KanbanBoard() {
     { id: 'archived', title: '보관됨', status: 'archived', gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', count: 0 },
   ];
 
-  const handleDelete = async (id: string) => {
-    if (confirm('이 아이디어를 삭제하시겠습니까?')) {
-      try {
-        await deleteIdea(id);
-      } catch {
-        alert('아이디어 삭제에 실패했습니다.');
-      }
+  const handleDeleteClick = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteIdea(deleteTarget);
+      setDeleteTarget(null);
+    } catch {
+      showToast('아이디어 삭제에 실패했습니다.', 'error');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -219,7 +231,7 @@ export function KanbanBoard() {
 
     if (newStatus !== activeIdea.status) {
       updateIdea(active.id as string, { status: newStatus }).catch(() => {
-        alert('상태 변경에 실패했습니다.');
+        showToast('상태 변경에 실패했습니다.', 'error');
       });
     }
   };
@@ -270,7 +282,7 @@ export function KanbanBoard() {
             const columnIdeas = ideas.filter(idea => idea.status === column.status);
             return (
               <SortableContext key={column.id} items={columnIdeas.map(idea => idea.id)} strategy={verticalListSortingStrategy}>
-                <KanbanColumn column={{ ...column, count: columnIdeas.length }} ideas={columnIdeas} onDelete={handleDelete} />
+                <KanbanColumn column={{ ...column, count: columnIdeas.length }} ideas={columnIdeas} onDelete={handleDeleteClick} />
               </SortableContext>
             );
           })}
@@ -285,6 +297,19 @@ export function KanbanBoard() {
           )}
         </DragOverlay>
       </DndContext>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+        title="아이디어 삭제"
+        message="이 아이디어를 삭제하시겠습니까? 삭제된 아이디어는 복구할 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

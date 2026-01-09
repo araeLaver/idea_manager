@@ -94,16 +94,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Handle guest mode
     if (isGuest) {
       const newIdea = guestStorage.createIdea(ideaData);
-      await refreshIdeas();
-      await refreshStats();
+      await Promise.all([refreshIdeas(), refreshStats()]);
       return newIdea;
     }
 
     // Handle authenticated mode
     try {
       const newIdea = await api.createIdea(ideaData);
-      await refreshIdeas();
-      await refreshStats();
+      await Promise.all([refreshIdeas(), refreshStats()]);
       return newIdea;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create idea');
@@ -116,17 +114,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (isGuest) {
       const updated = guestStorage.updateIdea(id, ideaData);
       if (!updated) throw new Error('Idea not found');
-      await refreshIdeas();
-      await refreshStats();
+      await Promise.all([refreshIdeas(), refreshStats()]);
       return;
     }
 
-    // Handle authenticated mode
+    // Handle authenticated mode with optimistic update
+    const previousIdeas = [...ideas];
+
+    // Optimistically update UI immediately
+    setIdeas(prevIdeas =>
+      prevIdeas.map(idea =>
+        idea.id === id ? { ...idea, ...ideaData, updatedAt: new Date().toISOString() } : idea
+      )
+    );
+
     try {
       await api.updateIdea(id, ideaData);
-      await refreshIdeas();
-      await refreshStats();
+      // Refresh to get accurate server state
+      await Promise.all([refreshIdeas(), refreshStats()]);
     } catch (err) {
+      // Rollback on error
+      setIdeas(previousIdeas);
       setError(err instanceof Error ? err.message : 'Failed to update idea');
       throw err;
     }
@@ -137,17 +145,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (isGuest) {
       const deleted = guestStorage.deleteIdea(id);
       if (!deleted) throw new Error('Idea not found');
-      await refreshIdeas();
-      await refreshStats();
+      await Promise.all([refreshIdeas(), refreshStats()]);
       return;
     }
 
-    // Handle authenticated mode
+    // Handle authenticated mode with optimistic delete
+    const previousIdeas = [...ideas];
+
+    // Optimistically remove from UI immediately
+    setIdeas(prevIdeas => prevIdeas.filter(idea => idea.id !== id));
+
     try {
       await api.deleteIdea(id);
-      await refreshIdeas();
-      await refreshStats();
+      await Promise.all([refreshIdeas(), refreshStats()]);
     } catch (err) {
+      // Rollback on error
+      setIdeas(previousIdeas);
       setError(err instanceof Error ? err.message : 'Failed to delete idea');
       throw err;
     }
@@ -204,17 +217,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
       for (const id of ids) {
         guestStorage.updateIdea(id, { status });
       }
-      await refreshIdeas();
-      await refreshStats();
+      await Promise.all([refreshIdeas(), refreshStats()]);
       return;
     }
 
-    // Handle authenticated mode - use bulk API
+    // Handle authenticated mode with optimistic update
+    const previousIdeas = [...ideas];
+    const idsSet = new Set(ids);
+
+    // Optimistically update statuses immediately
+    setIdeas(prevIdeas =>
+      prevIdeas.map(idea =>
+        idsSet.has(idea.id) ? { ...idea, status, updatedAt: new Date().toISOString() } : idea
+      )
+    );
+
     try {
       await api.bulkUpdateStatus(ids, status);
-      await refreshIdeas();
-      await refreshStats();
+      await Promise.all([refreshIdeas(), refreshStats()]);
     } catch (err) {
+      // Rollback on error
+      setIdeas(previousIdeas);
       setError(err instanceof Error ? err.message : 'Failed to bulk update status');
       throw err;
     }

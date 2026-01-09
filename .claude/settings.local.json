@@ -39,7 +39,10 @@
       "WebFetch(domain:various-belva-untab-1a59bee2.koyeb.app)",
       "Bash(npm run dev:*)",
       "Bash(npm run dev:server:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(dir /s \"C:\\\\Develop\\\\workspace\\\\04.idea_manager\\\\src\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": [],
     "ask": []

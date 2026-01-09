@@ -1,5 +1,26 @@
 import type { IdeaStatus, IdeaPriority } from '../types';
 
+/** Default categories for ideas */
+export const CATEGORIES = [
+  '기술',
+  '비즈니스',
+  '디자인',
+  '교육',
+  '헬스케어',
+  '환경',
+  '서비스',
+  '엔터테인먼트',
+] as const;
+
+/** Type for category values */
+export type IdeaCategory = typeof CATEGORIES[number];
+
+/** All status values for iteration */
+export const STATUSES: IdeaStatus[] = ['draft', 'in-progress', 'completed', 'archived'];
+
+/** All priority values for iteration */
+export const PRIORITIES: IdeaPriority[] = ['low', 'medium', 'high'];
+
 /** Maps status values to Korean display labels */
 export const STATUS_LABELS: Record<IdeaStatus, string> = {
   'draft': '초안',

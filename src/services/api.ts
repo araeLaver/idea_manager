@@ -140,7 +140,9 @@ class ApiService {
       }
     } catch {
       // Continue with local logout even if server request fails
-      console.warn('Server logout failed, continuing with local logout');
+      if (import.meta.env.DEV) {
+        console.warn('Server logout failed, continuing with local logout');
+      }
     } finally {
       this.setToken(null);
     }
@@ -230,7 +232,9 @@ class ApiService {
 
       // Safety limit to prevent infinite loops
       if (page > 100) {
-        console.warn('getAllIdeas: Reached maximum page limit');
+        if (import.meta.env.DEV) {
+          console.warn('getAllIdeas: Reached maximum page limit');
+        }
         break;
       }
     }
@@ -348,7 +352,9 @@ class ApiService {
         await this.createIdea(idea);
         results.ideas++;
       } catch (error) {
-        console.warn('Failed to migrate idea:', idea.title, error);
+        if (import.meta.env.DEV) {
+          console.warn('Failed to migrate idea:', idea.title, error);
+        }
       }
     }
 
@@ -358,7 +364,9 @@ class ApiService {
         await this.saveMemo(memo.date, memo.content);
         results.memos++;
       } catch (error) {
-        console.warn('Failed to migrate memo:', memo.date, error);
+        if (import.meta.env.DEV) {
+          console.warn('Failed to migrate memo:', memo.date, error);
+        }
       }
     }
 

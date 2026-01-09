@@ -252,7 +252,7 @@ function StatCard({
 }
 
 export function Statistics() {
-  const { ideas } = useData();
+  const { ideas, loading } = useData();
 
   // 통계 계산
   const stats = useMemo(() => {
@@ -348,6 +348,61 @@ export function Statistics() {
       inProgressCount: statusCounts['in-progress'] || 0,
     };
   }, [ideas]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 py-6">
+        {/* 헤더 스켈레톤 */}
+        <div className="flex items-center gap-3">
+          <div className="skeleton" style={{ width: '2.5rem', height: '2.5rem', borderRadius: 'var(--radius-lg)' }} />
+          <div>
+            <div className="skeleton" style={{ width: '6rem', height: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+            <div className="skeleton" style={{ width: '12rem', height: '0.875rem', borderRadius: 'var(--radius-md)' }} />
+          </div>
+        </div>
+
+        {/* 요약 카드 스켈레톤 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="p-4 rounded-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="skeleton" style={{ width: '4rem', height: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '0.5rem' }} />
+                  <div className="skeleton" style={{ width: '3rem', height: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '0.25rem' }} />
+                  <div className="skeleton" style={{ width: '5rem', height: '0.625rem', borderRadius: 'var(--radius-md)' }} />
+                </div>
+                <div className="skeleton" style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-lg)' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 차트 스켈레톤 */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+              <div className="skeleton" style={{ width: '6rem', height: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', marginLeft: 'auto', marginRight: 'auto' }} />
+              <div className="skeleton" style={{ width: '180px', height: '180px', borderRadius: 'var(--radius-full)', marginLeft: 'auto', marginRight: 'auto' }} />
+            </div>
+          ))}
+        </div>
+
+        {/* 트렌드 스켈레톤 */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+              <div className="skeleton" style={{ width: '8rem', height: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }} />
+              <div className="flex items-end justify-between gap-1" style={{ height: '120px' }}>
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <div key={j} className="skeleton flex-1" style={{ height: `${40 + Math.random() * 60}%`, borderRadius: 'var(--radius-md) var(--radius-md) 0 0' }} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 py-6">

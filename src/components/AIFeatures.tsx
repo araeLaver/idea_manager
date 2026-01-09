@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Bot, Tag, FolderOpen, Wand2, Loader2, Search, Target, TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Lightbulb, Check } from 'lucide-react';
 import { aiService } from '../services/aiService';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 
 interface AIFeaturesProps {
   title: string;
@@ -35,6 +36,7 @@ interface ImprovementSuggestions {
 
 export function AIFeatures({ title, description, tags, onCategorySelect, onTagsSelect, onTitleChange, onDescriptionChange }: AIFeaturesProps) {
   const { ideas } = useData();
+  const { showToast } = useToast();
   const [loadingCategory, setLoadingCategory] = useState(false);
   const [loadingTags, setLoadingTags] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
@@ -49,7 +51,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
 
   const suggestCategory = async () => {
     if (!title && !description) {
-      alert('제목이나 설명을 먼저 입력해주세요.');
+      showToast('제목이나 설명을 먼저 입력해주세요.', 'warning');
       return;
     }
 
@@ -58,7 +60,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
       const prediction = await aiService.categorizeIdea(title, description);
       setCategoryPrediction(prediction);
     } catch {
-      alert('카테고리 예측에 실패했습니다. 다시 시도해주세요.');
+      showToast('카테고리 예측에 실패했습니다. 다시 시도해주세요.', 'error');
     } finally {
       setLoadingCategory(false);
     }
@@ -66,7 +68,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
 
   const suggestTags = async () => {
     if (!title && !description) {
-      alert('제목이나 설명을 먼저 입력해주세요.');
+      showToast('제목이나 설명을 먼저 입력해주세요.', 'warning');
       return;
     }
 
@@ -75,7 +77,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
       const suggestions = await aiService.suggestTags(title, description);
       setTagSuggestions(suggestions.tags);
     } catch {
-      alert('태그 제안에 실패했습니다. 다시 시도해주세요.');
+      showToast('태그 제안에 실패했습니다. 다시 시도해주세요.', 'error');
     } finally {
       setLoadingTags(false);
     }
@@ -104,7 +106,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
 
   const findSimilarIdeas = async () => {
     if (!title && !description) {
-      alert('제목이나 설명을 먼저 입력해주세요.');
+      showToast('제목이나 설명을 먼저 입력해주세요.', 'warning');
       return;
     }
 
@@ -122,7 +124,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
       );
       setSimilarIdeas(results);
     } catch {
-      alert('유사 아이디어 검색에 실패했습니다.');
+      showToast('유사 아이디어 검색에 실패했습니다.', 'error');
     } finally {
       setLoadingSimilar(false);
     }
@@ -130,7 +132,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
 
   const generateSWOT = async () => {
     if (!title && !description) {
-      alert('제목이나 설명을 먼저 입력해주세요.');
+      showToast('제목이나 설명을 먼저 입력해주세요.', 'warning');
       return;
     }
 
@@ -143,7 +145,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
       });
       setSWOTAnalysis(result);
     } catch {
-      alert('SWOT 분석 생성에 실패했습니다.');
+      showToast('SWOT 분석 생성에 실패했습니다.', 'error');
     } finally {
       setLoadingSWOT(false);
     }
@@ -151,7 +153,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
 
   const getImprovements = async () => {
     if (!title && !description) {
-      alert('제목이나 설명을 먼저 입력해주세요.');
+      showToast('제목이나 설명을 먼저 입력해주세요.', 'warning');
       return;
     }
 
@@ -160,7 +162,7 @@ export function AIFeatures({ title, description, tags, onCategorySelect, onTagsS
       const result = await aiService.improveIdea(title, description);
       setImprovements(result);
     } catch {
-      alert('개선 제안 생성에 실패했습니다.');
+      showToast('개선 제안 생성에 실패했습니다.', 'error');
     } finally {
       setLoadingImprove(false);
     }
