@@ -85,8 +85,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedStats = await api.getStats();
       setStats(fetchedStats);
-    } catch {
-      // Stats fetch failed silently - non-critical
+    } catch (error) {
+      // Stats fetch is non-critical, log for debugging
+      console.debug('Stats fetch failed:', error);
     }
   }, [isAuthenticated, isGuest]);
 

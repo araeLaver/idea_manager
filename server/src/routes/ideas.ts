@@ -7,19 +7,34 @@ const log = createLogger('ideas');
 
 const router = Router();
 
+// Escape HTML entities to prevent XSS when data is rendered
+const escapeHtml = (str: string): string => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 // Sanitize and validate values for history JSON storage
-// Limits string lengths and removes sensitive or circular data
+// Limits string lengths, removes sensitive data, and escapes HTML
 const sanitizeHistoryValue = (value: unknown): unknown => {
   if (value === null || value === undefined) return null;
   if (typeof value === 'string') {
-    // Limit string length to prevent excessive storage
-    return value.length > 500 ? value.substring(0, 500) + '...' : value;
+    // Limit string length and escape HTML entities
+    const truncated = value.length > 500 ? value.substring(0, 500) + '...' : value;
+    return escapeHtml(truncated);
   }
   if (typeof value === 'number' || typeof value === 'boolean') return value;
   if (Array.isArray(value)) {
-    return value.slice(0, 20).map(item =>
-      typeof item === 'string' ? (item.length > 100 ? item.substring(0, 100) + '...' : item) : item
-    );
+    return value.slice(0, 20).map(item => {
+      if (typeof item === 'string') {
+        const truncated = item.length > 100 ? item.substring(0, 100) + '...' : item;
+        return escapeHtml(truncated);
+      }
+      return item;
+    });
   }
   if (typeof value === 'object') {
     const sanitized: Record<string, unknown> = {};
@@ -534,12 +549,19 @@ router.get('/stats/summary', async (req: AuthRequest, res: Response) => {
 });
 
 // Bulk update status (for kanban)
+const MAX_BULK_IDS = 100;
+
 router.patch('/bulk/status', async (req: AuthRequest, res: Response) => {
   try {
     const { ids, status } = req.body;
 
     if (!ids || !Array.isArray(ids) || !status) {
       return res.status(400).json({ error: 'ids array and status are required' });
+    }
+
+    // Limit bulk operations to prevent abuse
+    if (ids.length > MAX_BULK_IDS) {
+      return res.status(400).json({ error: `Maximum ${MAX_BULK_IDS} items allowed per bulk operation` });
     }
 
     await query(

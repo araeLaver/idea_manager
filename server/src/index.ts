@@ -191,8 +191,8 @@ app.use(pinoHttp({
   autoLogging: {
     ignore: (req) => req.url === '/api/health' || req.url === '/api/v1/health'
   },
-  // Redact sensitive data
-  redact: ['req.headers.authorization'],
+  // Redact sensitive data from logs
+  redact: ['req.headers.authorization', 'req.headers.cookie', 'req.body.password', 'req.body.newPassword', 'req.body.email', 'req.body.token'],
   // Custom log level based on status code
   customLogLevel: (req, res, err) => {
     if (res.statusCode >= 500 || err) return 'error';
@@ -340,6 +340,11 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error({ reason, promise }, 'Unhandled Rejection');
+  // In production, gracefully shutdown to prevent inconsistent state
+  if (process.env.NODE_ENV === 'production') {
+    logger.fatal('Unhandled rejection in production - initiating graceful shutdown');
+    shutdown('unhandledRejection');
+  }
 });
 
 // Initialize database and start server

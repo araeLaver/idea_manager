@@ -25,6 +25,19 @@ export function Profile() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
+  // Loading state - user data not yet available
+  if (!user && !isGuest) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="card" style={{ padding: 'var(--space-8)' }}>
+          <div className="flex items-center justify-center py-12">
+            <span className="spinner" style={{ width: '2rem', height: '2rem' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Guest mode - redirect to login
   if (isGuest) {
     return (

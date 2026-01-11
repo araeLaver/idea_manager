@@ -86,37 +86,47 @@ export function IdeaForm() {
     if (isEdit && id && !ideaLoadedRef.current) {
       ideaLoadedRef.current = true;
       setLoadingIdea(true);
-      getIdea(id).then(idea => {
-        if (idea) {
-          const loadedData: IdeaFormData = {
-            title: idea.title,
-            description: idea.description,
-            category: idea.category,
-            tags: idea.tags,
-            status: idea.status,
-            priority: idea.priority,
-            notes: idea.notes || '',
-            targetMarket: idea.targetMarket || '',
-            potentialRevenue: idea.potentialRevenue || '',
-            resources: idea.resources || '',
-            timeline: idea.timeline || '',
-            deadline: idea.deadline || '',
-            reminderEnabled: idea.reminderEnabled || false,
-            reminderDays: idea.reminderDays || 3
-          };
-          setFormData(loadedData);
-          setInitialFormData(loadedData);
-        } else {
+      getIdea(id)
+        .then(idea => {
+          if (idea) {
+            const loadedData: IdeaFormData = {
+              title: idea.title,
+              description: idea.description,
+              category: idea.category,
+              tags: idea.tags,
+              status: idea.status,
+              priority: idea.priority,
+              notes: idea.notes || '',
+              targetMarket: idea.targetMarket || '',
+              potentialRevenue: idea.potentialRevenue || '',
+              resources: idea.resources || '',
+              timeline: idea.timeline || '',
+              deadline: idea.deadline || '',
+              reminderEnabled: idea.reminderEnabled || false,
+              reminderDays: idea.reminderDays || 3
+            };
+            setFormData(loadedData);
+            setInitialFormData(loadedData);
+          } else {
+            showToast('아이디어를 찾을 수 없습니다.', 'error');
+            navigate('/');
+          }
+          setLoadingIdea(false);
+        })
+        .catch((error) => {
+          setLoadingIdea(false);
+          showToast('아이디어를 불러오는데 실패했습니다.', 'error');
+          if (import.meta.env.DEV) {
+            console.error('Failed to load idea:', error);
+          }
           navigate('/');
-        }
-        setLoadingIdea(false);
-      });
+        });
     }
     // Reset ref when id changes
     return () => {
       if (id) ideaLoadedRef.current = false;
     };
-  }, [id, isEdit, navigate, getIdea]);
+  }, [id, isEdit, navigate, getIdea, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,8 +329,9 @@ export function IdeaForm() {
 
           {/* Title */}
           <div className="form-group">
-            <label className="form-label">제목 *</label>
+            <label htmlFor="idea-title" className="form-label">제목 *</label>
             <input
+              id="idea-title"
               type="text"
               required
               value={formData.title}
@@ -331,16 +342,18 @@ export function IdeaForm() {
               placeholder="아이디어 제목을 입력하세요"
               maxLength={200}
               aria-invalid={validationErrors.some(e => e.includes('제목'))}
+              aria-describedby="idea-title-hint"
             />
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            <span id="idea-title-hint" className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {formData.title.length}/200
             </span>
           </div>
 
           {/* Description */}
           <div className="form-group">
-            <label className="form-label">설명 *</label>
+            <label htmlFor="idea-description" className="form-label">설명 *</label>
             <textarea
+              id="idea-description"
               required
               value={formData.description}
               onChange={(e) => {
@@ -351,8 +364,9 @@ export function IdeaForm() {
               placeholder="아이디어에 대한 설명을 입력하세요"
               maxLength={5000}
               aria-invalid={validationErrors.some(e => e.includes('설명'))}
+              aria-describedby="idea-description-hint"
             />
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            <span id="idea-description-hint" className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {formData.description.length}/5000
             </span>
           </div>
@@ -371,8 +385,9 @@ export function IdeaForm() {
           {/* Category & Status */}
           <div className="grid grid-cols-2 gap-4 mb-5">
             <div>
-              <label className="form-label">카테고리 *</label>
+              <label htmlFor="idea-category" className="form-label">카테고리 *</label>
               <input
+                id="idea-category"
                 type="text"
                 required
                 value={formData.category}
@@ -386,8 +401,9 @@ export function IdeaForm() {
               />
             </div>
             <div>
-              <label className="form-label">상태</label>
+              <label htmlFor="idea-status" className="form-label">상태</label>
               <select
+                id="idea-status"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as IdeaStatus })}
               >
@@ -400,8 +416,9 @@ export function IdeaForm() {
 
           {/* Priority */}
           <div className="form-group">
-            <label className="form-label">우선순위</label>
+            <label htmlFor="idea-priority" className="form-label">우선순위</label>
             <select
+              id="idea-priority"
               value={formData.priority}
               onChange={(e) => setFormData({ ...formData, priority: e.target.value as IdeaPriority })}
             >

@@ -39,6 +39,15 @@ const pool = new Pool({
   connectionTimeoutMillis: parseInt(process.env.DATABASE_CONNECTION_TIMEOUT || '2000'),
 });
 
+// Handle pool errors to prevent unhandled rejections
+pool.on('error', (err) => {
+  logger.error({ error: err }, 'Unexpected database pool error');
+});
+
+pool.on('connect', () => {
+  logger.debug('New database connection established');
+});
+
 export const query = (text: string, params?: unknown[]) => pool.query(text, params);
 
 // Get a client from the pool for transactions
@@ -96,8 +105,31 @@ export const cleanupExpiredTokens = async (): Promise<void> => {
   await query('DELETE FROM idea_manager.password_reset_tokens WHERE expires_at < NOW()');
 };
 
+// Retry connection with exponential backoff
+async function connectWithRetry(maxRetries = 3, baseDelayMs = 1000): Promise<void> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const client = await pool.connect();
+      client.release();
+      logger.info('Database connection verified');
+      return;
+    } catch (error) {
+      if (attempt === maxRetries) {
+        logger.error({ error, attempt }, 'Failed to connect to database after max retries');
+        throw error;
+      }
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      logger.warn({ attempt, delay, error }, 'Database connection failed, retrying...');
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 export const initDatabase = async () => {
   try {
+    // Verify database connection with retry
+    await connectWithRetry();
+
     // Create schema
     await query(`CREATE SCHEMA IF NOT EXISTS idea_manager`);
 

@@ -117,15 +117,16 @@ export function NotificationCenter() {
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-default)',
           }}
-          role="region"
-          aria-label="알림 목록"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notification-dialog-title"
         >
           {/* Header */}
           <div
             className="flex items-center justify-between p-4"
             style={{ borderBottom: '1px solid var(--border-default)' }}
           >
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <h3 id="notification-dialog-title" className="font-semibold" style={{ color: 'var(--text-primary)' }}>
               알림
             </h3>
             <div className="flex items-center gap-2">
@@ -170,6 +171,8 @@ export function NotificationCenter() {
           <div
             className="overflow-y-auto"
             style={{ maxHeight: '400px' }}
+            role="list"
+            aria-live="polite"
           >
             {notifications.length === 0 ? (
               <div className="p-8 text-center">

@@ -23,7 +23,10 @@ const updateSW = registerSW({
     }
   },
   onRegisterError(error) {
-    console.error('서비스 워커 등록 실패:', error);
+    // Only log in development to avoid console noise in production
+    if (import.meta.env.DEV) {
+      console.error('서비스 워커 등록 실패:', error);
+    }
   },
 });
 

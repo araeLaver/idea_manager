@@ -25,7 +25,7 @@ interface CacheEntry<T> {
   timestamp: number;
 }
 
-const CACHE_TTL = 30 * 1000; // 30 seconds for stats cache
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes for stats cache (reduces API calls)
 
 /**
  * Custom error class for API errors with status code and auth error detection
@@ -65,8 +65,17 @@ class ApiService {
   private statsCache: CacheEntry<Stats> | null = null;
 
   constructor() {
-    // Check for legacy token in localStorage (for migration)
-    this.legacyToken = localStorage.getItem('token');
+    // SECURITY: Migrate legacy token from localStorage to memory-only
+    // localStorage is vulnerable to XSS attacks - immediately remove after reading
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      this.legacyToken = storedToken;
+      // Remove from localStorage immediately to minimize XSS exposure window
+      localStorage.removeItem('token');
+      if (import.meta.env.DEV) {
+        console.warn('[Security] Legacy token migrated from localStorage. Token storage now uses HttpOnly cookies.');
+      }
+    }
   }
 
   /** Clear all caches (call on logout or data mutation) */
@@ -76,16 +85,18 @@ class ApiService {
 
   /**
    * Set or clear the authentication token.
-   * With HttpOnly cookies, this is mainly for backward compatibility.
-   * The actual token is stored in HttpOnly cookie by the server.
+   * SECURITY: Token is stored in memory only, NOT in localStorage.
+   * The actual auth token is stored in HttpOnly cookie by the server.
+   * @deprecated This method is for backward compatibility during migration.
    */
   setToken(token: string | null) {
     if (token) {
-      // Don't store in localStorage anymore - cookie is set by server
+      // SECURITY: Store in memory only, never in localStorage (XSS protection)
       this.legacyToken = token;
     } else {
       // Clear legacy token on logout
       this.legacyToken = null;
+      // Ensure any remaining localStorage token is removed (belt and suspenders)
       localStorage.removeItem('token');
     }
   }

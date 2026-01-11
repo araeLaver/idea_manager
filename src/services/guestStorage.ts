@@ -13,7 +13,7 @@ const STORAGE_KEYS = {
 
 /** Generate a unique ID for guest data */
 const generateId = (): string => {
-  return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `guest_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 };
 
 /** Helper to get a future date string */

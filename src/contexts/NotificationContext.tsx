@@ -74,7 +74,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const addNotification = useCallback((notification: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => {
     const newNotification: AppNotification = {
       ...notification,
-      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `notif_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
       createdAt: new Date().toISOString(),
       read: false,
     };
@@ -143,17 +143,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         checkedDeadlines = { date: today, ideaIds: [] };
       }
 
-      ideas.forEach((idea: Idea) => {
-        if (!idea.deadline || !idea.reminderEnabled || idea.status === 'completed' || idea.status === 'archived') {
-          return;
-        }
+      // Pre-filter to relevant ideas only for better performance
+      const activeIdeasWithDeadline = ideas.filter((idea: Idea) =>
+        idea.deadline &&
+        idea.reminderEnabled &&
+        idea.status !== 'completed' &&
+        idea.status !== 'archived' &&
+        !checkedDeadlines.ideaIds.includes(idea.id)
+      );
 
-        // Skip if already checked today
-        if (checkedDeadlines.ideaIds.includes(idea.id)) {
-          return;
-        }
-
-        const deadline = new Date(idea.deadline);
+      activeIdeasWithDeadline.forEach((idea: Idea) => {
+        const deadline = new Date(idea.deadline!);
         const reminderDays = idea.reminderDays || 3;
         const reminderDate = new Date(deadline);
         reminderDate.setDate(reminderDate.getDate() - reminderDays);

@@ -160,6 +160,9 @@ export function ExportImport({ onClose }: ExportImportProps) {
       className="fixed inset-0 flex items-center justify-center z-50"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="export-import-dialog-title"
     >
       <div
         className="card w-full max-w-md mx-4"
@@ -168,7 +171,7 @@ export function ExportImport({ onClose }: ExportImportProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          <h2 id="export-import-dialog-title" className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
             내보내기 / 가져오기
           </h2>
           <button onClick={onClose} className="icon-btn" aria-label="닫기">
@@ -268,6 +271,7 @@ export function ExportImport({ onClose }: ExportImportProps) {
             accept=".json"
             onChange={handleImport}
             className="hidden"
+            aria-label="JSON 파일 선택"
           />
           <button
             onClick={() => fileInputRef.current?.click()}

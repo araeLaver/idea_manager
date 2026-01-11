@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Lightbulb, Mail, Lock, User, Database, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Lightbulb, Mail, Lock, User, Database, CheckCircle, AlertTriangle, Check, X } from 'lucide-react';
 import { validateRegisterForm } from '../utils/validation';
 
 interface MigrationResult {
@@ -27,6 +27,14 @@ export default function Register() {
 
   const guestDataExists = isGuest && hasGuestData();
   const guestDataInfo = guestDataExists ? getGuestDataInfo() : null;
+
+  // Real-time password strength feedback
+  const passwordRequirements = useMemo(() => ({
+    minLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+  }), [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,8 +206,30 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="8자 이상, 대소문자+숫자"
                   style={{ paddingLeft: '2.75rem' }}
+                  aria-describedby="password-requirements"
                 />
               </div>
+              {/* Password strength indicators */}
+              {password && (
+                <div id="password-requirements" className="mt-2 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5" style={{ color: passwordRequirements.minLength ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
+                    {passwordRequirements.minLength ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>8자 이상</span>
+                  </div>
+                  <div className="flex items-center gap-1.5" style={{ color: passwordRequirements.hasUppercase ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
+                    {passwordRequirements.hasUppercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>대문자 포함</span>
+                  </div>
+                  <div className="flex items-center gap-1.5" style={{ color: passwordRequirements.hasLowercase ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
+                    {passwordRequirements.hasLowercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>소문자 포함</span>
+                  </div>
+                  <div className="flex items-center gap-1.5" style={{ color: passwordRequirements.hasNumber ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
+                    {passwordRequirements.hasNumber ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span>숫자 포함</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password Field */}

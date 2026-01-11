@@ -150,10 +150,15 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    // Validate email format before database query
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
     // Find user
     const result = await query(
       'SELECT id, email, password_hash, name, created_at FROM idea_manager.users WHERE email = $1',
-      [email]
+      [email.toLowerCase().trim()]
     );
 
     if (result.rows.length === 0) {
@@ -404,11 +409,11 @@ router.post('/password-reset/request', async (req: Request, res: Response) => {
         log.warn({ email }, 'Failed to send password reset email');
       }
     } else {
-      // Email service not configured - log in development only
+      // Email service not configured
       if (process.env.NODE_ENV !== 'production') {
         log.warn('Email service not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD.');
-        log.debug({ email }, `Password reset token: ${resetToken}`);
-        log.debug(`Reset link: ${frontendUrl}/reset-password?token=${resetToken}`);
+        // Security: Never log tokens, even in development
+        log.debug('Password reset requested but email service unavailable');
       } else {
         log.error('Email service not configured in production. Password reset emails cannot be sent.');
       }
@@ -421,6 +426,11 @@ router.post('/password-reset/request', async (req: Request, res: Response) => {
   }
 });
 
+// Validate reset token format (must be 64 hex characters from 32 bytes)
+const isValidTokenFormat = (token: string): boolean => {
+  return typeof token === 'string' && /^[a-f0-9]{64}$/i.test(token);
+};
+
 // Verify password reset token
 router.post('/password-reset/verify', async (req: Request, res: Response) => {
   try {
@@ -428,6 +438,11 @@ router.post('/password-reset/verify', async (req: Request, res: Response) => {
 
     if (!token) {
       return res.status(400).json({ error: 'Token is required' });
+    }
+
+    // Validate token format before database query
+    if (!isValidTokenFormat(token)) {
+      return res.status(400).json({ error: 'Invalid token format' });
     }
 
     const tokenHash = hashToken(token);
@@ -456,6 +471,11 @@ router.post('/password-reset/confirm', async (req: Request, res: Response) => {
 
     if (!token || !newPassword) {
       return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    // Validate token format before database query
+    if (!isValidTokenFormat(token)) {
+      return res.status(400).json({ error: 'Invalid token format' });
     }
 
     // Validate new password strength
