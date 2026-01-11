@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import type { ReactNode } from 'react';
 import type { AppNotification, Idea } from '../types';
 import { useData } from './DataContext';
 
@@ -112,6 +113,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications([]);
   }, []);
 
+  // Use ref to store addNotification to avoid dependency changes
+  const addNotificationRef = useRef(addNotification);
+  useEffect(() => {
+    addNotificationRef.current = addNotification;
+  }, [addNotification]);
+
   // Check deadlines and create reminders
   useEffect(() => {
     const checkDeadlines = () => {
@@ -155,7 +162,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
         // Check if it's time to remind
         if (now >= reminderDate && now < deadline) {
-          addNotification({
+          addNotificationRef.current({
             type: 'reminder',
             title: '마감일 리마인더',
             message: `"${idea.title}" 마감일이 ${daysUntilDeadline}일 남았습니다.`,
@@ -166,7 +173,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
         // Check if deadline is today
         if (daysUntilDeadline === 0) {
-          addNotification({
+          addNotificationRef.current({
             type: 'deadline',
             title: '오늘 마감!',
             message: `"${idea.title}" 마감일이 오늘입니다!`,
@@ -177,7 +184,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
         // Check if deadline has passed
         if (daysUntilDeadline < 0) {
-          addNotification({
+          addNotificationRef.current({
             type: 'warning',
             title: '마감일 초과',
             message: `"${idea.title}" 마감일이 ${Math.abs(daysUntilDeadline)}일 지났습니다.`,
@@ -196,7 +203,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(checkDeadlines, 60 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [ideas, addNotification]);
+  }, [ideas]); // Only depend on ideas, not addNotification
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

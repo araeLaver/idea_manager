@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { Idea, IdeaFormData, Stats } from '../types';
 import api from '../services/api';
@@ -90,7 +90,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isGuest]);
 
-  const createIdea = async (ideaData: IdeaFormData): Promise<Idea> => {
+  const createIdea = useCallback(async (ideaData: IdeaFormData): Promise<Idea> => {
     // Handle guest mode
     if (isGuest) {
       const newIdea = guestStorage.createIdea(ideaData);
@@ -107,9 +107,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to create idea');
       throw err;
     }
-  };
+  }, [isGuest, refreshIdeas, refreshStats]);
 
-  const updateIdea = async (id: string, ideaData: Partial<IdeaFormData>): Promise<void> => {
+  const updateIdea = useCallback(async (id: string, ideaData: Partial<IdeaFormData>): Promise<void> => {
     // Handle guest mode
     if (isGuest) {
       const updated = guestStorage.updateIdea(id, ideaData);
@@ -138,9 +138,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to update idea');
       throw err;
     }
-  };
+  }, [isGuest, ideas, refreshIdeas, refreshStats]);
 
-  const deleteIdea = async (id: string): Promise<void> => {
+  const deleteIdea = useCallback(async (id: string): Promise<void> => {
     // Handle guest mode
     if (isGuest) {
       const deleted = guestStorage.deleteIdea(id);
@@ -164,9 +164,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to delete idea');
       throw err;
     }
-  };
+  }, [isGuest, ideas, refreshIdeas, refreshStats]);
 
-  const getIdea = async (id: string): Promise<Idea | null> => {
+  const getIdea = useCallback(async (id: string): Promise<Idea | null> => {
     // Handle guest mode
     if (isGuest) {
       return guestStorage.getIdea(id);
@@ -179,9 +179,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to get idea');
       return null;
     }
-  };
+  }, [isGuest]);
 
-  const searchIdeas = async (query: string): Promise<Idea[]> => {
+  const searchIdeas = useCallback(async (query: string): Promise<Idea[]> => {
     // Handle guest mode
     if (isGuest) {
       return guestStorage.searchIdeas(query);
@@ -194,9 +194,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to search ideas');
       return [];
     }
-  };
+  }, [isGuest]);
 
-  const filterIdeas = async (filters: { status?: string; category?: string; priority?: string }): Promise<Idea[]> => {
+  const filterIdeas = useCallback(async (filters: { status?: string; category?: string; priority?: string }): Promise<Idea[]> => {
     // Handle guest mode
     if (isGuest) {
       return guestStorage.filterIdeas(filters);
@@ -209,9 +209,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to filter ideas');
       return [];
     }
-  };
+  }, [isGuest]);
 
-  const bulkUpdateStatus = async (ids: string[], status: Idea['status']): Promise<void> => {
+  const bulkUpdateStatus = useCallback(async (ids: string[], status: Idea['status']): Promise<void> => {
     // Handle guest mode - update each idea individually
     if (isGuest) {
       for (const id of ids) {
@@ -241,7 +241,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to bulk update status');
       throw err;
     }
-  };
+  }, [isGuest, ideas, refreshIdeas, refreshStats]);
 
   useEffect(() => {
     if (isAuthenticated || isGuest) {
@@ -253,7 +253,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isGuest, refreshIdeas, refreshStats]);
 
-  const value: DataContextType = {
+  const value = useMemo<DataContextType>(() => ({
     ideas,
     loading,
     error,
@@ -267,7 +267,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     refreshStats,
     filterIdeas,
     bulkUpdateStatus,
-  };
+  }), [
+    ideas,
+    loading,
+    error,
+    stats,
+    createIdea,
+    updateIdea,
+    deleteIdea,
+    getIdea,
+    searchIdeas,
+    refreshIdeas,
+    refreshStats,
+    filterIdeas,
+    bulkUpdateStatus,
+  ]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

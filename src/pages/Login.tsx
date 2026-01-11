@@ -1,8 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Lightbulb, Mail, Lock, ArrowRight, Database, CheckCircle } from 'lucide-react';
+import { Lightbulb, Mail, Lock, ArrowRight, Database, CheckCircle, AlertTriangle } from 'lucide-react';
 import { validateLoginForm } from '../utils/validation';
+
+interface MigrationResult {
+  ideas: number;
+  memos: number;
+  totalIdeas: number;
+  totalMemos: number;
+  failedIdeas: string[];
+  failedMemos: string[];
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,7 +19,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [migrateData, setMigrateData] = useState(true);
-  const [migrationResult, setMigrationResult] = useState<{ ideas: number; memos: number } | null>(null);
+  const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
   const { login, continueAsGuest, isGuest, hasGuestData, getGuestDataInfo } = useAuth();
   const navigate = useNavigate();
 
@@ -205,20 +214,58 @@ export default function Login() {
               </div>
             )}
 
-            {/* Migration Success Message */}
+            {/* Migration Result Message */}
             {migrationResult && (
               <div
-                className="p-4 rounded-lg mb-4 flex items-center gap-3"
-                style={{ backgroundColor: 'var(--color-success-50)', border: '1px solid var(--color-success-200)' }}
+                className="p-4 rounded-lg mb-4"
+                style={{
+                  backgroundColor: migrationResult.failedIdeas.length > 0 || migrationResult.failedMemos.length > 0
+                    ? 'var(--color-warning-50)'
+                    : 'var(--color-success-50)',
+                  border: `1px solid ${migrationResult.failedIdeas.length > 0 || migrationResult.failedMemos.length > 0
+                    ? 'var(--color-warning-200)'
+                    : 'var(--color-success-200)'}`
+                }}
               >
-                <CheckCircle className="w-5 h-5" style={{ color: 'var(--color-success-500)' }} />
-                <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-success-700)' }}>
-                    데이터 이전 완료!
-                  </p>
-                  <p className="text-xs" style={{ color: 'var(--color-success-600)' }}>
-                    아이디어 {migrationResult.ideas}개, 메모 {migrationResult.memos}개가 이전되었습니다.
-                  </p>
+                <div className="flex items-start gap-3">
+                  {migrationResult.failedIdeas.length > 0 || migrationResult.failedMemos.length > 0 ? (
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-warning-500)' }} />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-success-500)' }} />
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium" style={{
+                      color: migrationResult.failedIdeas.length > 0 || migrationResult.failedMemos.length > 0
+                        ? 'var(--color-warning-700)'
+                        : 'var(--color-success-700)'
+                    }}>
+                      {migrationResult.failedIdeas.length > 0 || migrationResult.failedMemos.length > 0
+                        ? '데이터 이전 부분 완료'
+                        : '데이터 이전 완료!'}
+                    </p>
+                    <p className="text-xs mt-1" style={{
+                      color: migrationResult.failedIdeas.length > 0 || migrationResult.failedMemos.length > 0
+                        ? 'var(--color-warning-600)'
+                        : 'var(--color-success-600)'
+                    }}>
+                      아이디어 {migrationResult.ideas}/{migrationResult.totalIdeas}개,
+                      메모 {migrationResult.memos}/{migrationResult.totalMemos}개 이전됨
+                    </p>
+                    {(migrationResult.failedIdeas.length > 0 || migrationResult.failedMemos.length > 0) && (
+                      <div className="mt-2 text-xs" style={{ color: 'var(--color-warning-600)' }}>
+                        {migrationResult.failedIdeas.length > 0 && (
+                          <p>실패한 아이디어: {migrationResult.failedIdeas.slice(0, 3).join(', ')}
+                            {migrationResult.failedIdeas.length > 3 && ` 외 ${migrationResult.failedIdeas.length - 3}개`}
+                          </p>
+                        )}
+                        {migrationResult.failedMemos.length > 0 && (
+                          <p>실패한 메모: {migrationResult.failedMemos.slice(0, 3).join(', ')}
+                            {migrationResult.failedMemos.length > 3 && ` 외 ${migrationResult.failedMemos.length - 3}개`}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

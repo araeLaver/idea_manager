@@ -7,6 +7,41 @@ const log = createLogger('ideas');
 
 const router = Router();
 
+// Sanitize and validate values for history JSON storage
+// Limits string lengths and removes sensitive or circular data
+const sanitizeHistoryValue = (value: unknown): unknown => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') {
+    // Limit string length to prevent excessive storage
+    return value.length > 500 ? value.substring(0, 500) + '...' : value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  if (Array.isArray(value)) {
+    return value.slice(0, 20).map(item =>
+      typeof item === 'string' ? (item.length > 100 ? item.substring(0, 100) + '...' : item) : item
+    );
+  }
+  if (typeof value === 'object') {
+    const sanitized: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      sanitized[k] = sanitizeHistoryValue(v);
+    }
+    return sanitized;
+  }
+  return String(value);
+};
+
+// Create safe JSON string for history storage
+const createHistoryJson = (data: Record<string, unknown>): string => {
+  try {
+    const sanitized = sanitizeHistoryValue(data);
+    return JSON.stringify(sanitized);
+  } catch {
+    log.warn({ data }, 'Failed to serialize history data');
+    return JSON.stringify({ error: 'serialization_failed' });
+  }
+};
+
 // Validation constants
 const MAX_TITLE_LENGTH = 500;
 const MAX_DESCRIPTION_LENGTH = 10000;
@@ -121,8 +156,8 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     const { status, category, priority, search, page, limit, sortBy, sortOrder } = req.query;
 
     // Pagination settings
-    const pageNum = Math.max(1, parseInt(page as string) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 50));
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 50));
     const offset = (pageNum - 1) * limitNum;
 
     // Sorting settings
@@ -167,7 +202,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       `SELECT COUNT(*) as total FROM idea_manager.ideas ${whereClause}`,
       params
     );
-    const total = parseInt(countResult.rows[0].total);
+    const total = parseInt(countResult.rows[0].total, 10);
 
     // Get paginated data
     const dataParams = [...params, limitNum, offset];
@@ -279,7 +314,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     await query(
       `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, new_values)
        VALUES ($1, $2, 'created', $3)`,
-      [row.id, req.userId, JSON.stringify({ title, status: status || 'draft' })]
+      [row.id, req.userId, createHistoryJson({ title, status: status || 'draft' })]
     );
 
     res.status(201).json(mapRowToIdea(row));
@@ -380,8 +415,8 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
           row.id,
           req.userId,
           action,
-          JSON.stringify({ title: oldRow.title, status: oldRow.status }),
-          JSON.stringify({ title: row.title, status: row.status })
+          createHistoryJson({ title: oldRow.title, status: oldRow.status }),
+          createHistoryJson({ title: row.title, status: row.status })
         ]
       );
 
@@ -419,7 +454,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
         client,
         `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, old_values)
          VALUES ($1, $2, 'deleted', $3)`,
-        [req.params.id, req.userId, JSON.stringify(ideaResult.rows[0])]
+        [req.params.id, req.userId, createHistoryJson(ideaResult.rows[0])]
       );
 
       await txQuery(
@@ -482,15 +517,15 @@ router.get('/stats/summary', async (req: AuthRequest, res: Response) => {
     const { stats, top_categories, top_tags } = result.rows[0];
 
     res.json({
-      total: parseInt(stats.total),
-      completed: parseInt(stats.completed),
-      inProgress: parseInt(stats.in_progress),
-      draft: parseInt(stats.draft),
-      archived: parseInt(stats.archived),
-      highPriority: parseInt(stats.high_priority),
+      total: parseInt(stats.total, 10),
+      completed: parseInt(stats.completed, 10),
+      inProgress: parseInt(stats.in_progress, 10),
+      draft: parseInt(stats.draft, 10),
+      archived: parseInt(stats.archived, 10),
+      highPriority: parseInt(stats.high_priority, 10),
       completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
-      topCategories: top_categories.map((r: { category: string; count: string }) => ({ category: r.category, count: parseInt(r.count) })),
-      topTags: top_tags.map((r: { tag: string; count: string }) => ({ tag: r.tag, count: parseInt(r.count) }))
+      topCategories: top_categories.map((r: { category: string; count: string }) => ({ category: r.category, count: parseInt(r.count, 10) })),
+      topTags: top_tags.map((r: { tag: string; count: string }) => ({ tag: r.tag, count: parseInt(r.count, 10) }))
     });
   } catch (error) {
     log.error({ error }, 'Get stats error');

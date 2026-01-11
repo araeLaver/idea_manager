@@ -19,6 +19,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/a
 const MAX_ITEMS_PER_PAGE = 100;
 const DEFAULT_PAGE_SIZE = 50;
 
+// Simple in-memory cache for reducing redundant API calls
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const CACHE_TTL = 30 * 1000; // 30 seconds for stats cache
+
 /**
  * Custom error class for API errors with status code and auth error detection
  */
@@ -48,31 +56,53 @@ const isTokenExpiredError = (status: number, message: string): boolean => {
 /**
  * API service for communicating with the backend server.
  * Handles authentication, ideas, memos, and history operations.
+ * Uses HttpOnly cookies for secure token storage (XSS protection).
  */
 class ApiService {
-  private token: string | null = null;
+  // Legacy token support for migration from localStorage
+  private legacyToken: string | null = null;
+  // Simple cache for stats to reduce redundant API calls
+  private statsCache: CacheEntry<Stats> | null = null;
 
   constructor() {
-    this.token = localStorage.getItem('token');
+    // Check for legacy token in localStorage (for migration)
+    this.legacyToken = localStorage.getItem('token');
   }
 
-  /** Set or clear the authentication token */
+  /** Clear all caches (call on logout or data mutation) */
+  clearCache() {
+    this.statsCache = null;
+  }
+
+  /**
+   * Set or clear the authentication token.
+   * With HttpOnly cookies, this is mainly for backward compatibility.
+   * The actual token is stored in HttpOnly cookie by the server.
+   */
   setToken(token: string | null) {
-    this.token = token;
     if (token) {
-      localStorage.setItem('token', token);
+      // Don't store in localStorage anymore - cookie is set by server
+      this.legacyToken = token;
     } else {
+      // Clear legacy token on logout
+      this.legacyToken = null;
       localStorage.removeItem('token');
     }
   }
 
-  /** Get the current authentication token */
+  /** Get the current authentication token (for backward compatibility) */
   getToken() {
-    return this.token;
+    return this.legacyToken;
+  }
+
+  /** Check if user might be authenticated (has legacy token or cookie session) */
+  hasAuthSession() {
+    return this.legacyToken !== null;
   }
 
   /**
-   * Make an authenticated API request
+   * Make an authenticated API request.
+   * Uses credentials: 'include' to send HttpOnly cookies automatically.
    * @throws {ApiError} When the request fails
    */
   private async request<T>(
@@ -84,13 +114,15 @@ class ApiService {
       ...options.headers,
     };
 
-    if (this.token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
+    // Include legacy token in header for backward compatibility during migration
+    if (this.legacyToken) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.legacyToken}`;
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
+      credentials: 'include', // Send HttpOnly cookies with every request
     });
 
     if (!response.ok) {
@@ -132,12 +164,10 @@ class ApiService {
   /** Logout and invalidate the current token */
   async logout(): Promise<void> {
     try {
-      // Invalidate token on server
-      if (this.token) {
-        await this.request<MessageResponse>('/auth/logout', {
-          method: 'POST',
-        });
-      }
+      // Invalidate token on server (works with both cookie and legacy token)
+      await this.request<MessageResponse>('/auth/logout', {
+        method: 'POST',
+      });
     } catch {
       // Continue with local logout even if server request fails
       if (import.meta.env.DEV) {
@@ -145,6 +175,7 @@ class ApiService {
       }
     } finally {
       this.setToken(null);
+      this.clearCache();
     }
   }
 
@@ -249,38 +280,66 @@ class ApiService {
 
   /** Create a new idea */
   async createIdea(data: IdeaFormData): Promise<Idea> {
-    return this.request<Idea>('/ideas', {
+    const result = await this.request<Idea>('/ideas', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    this.clearCache(); // Invalidate stats cache
+    return result;
   }
 
   /** Update an existing idea */
   async updateIdea(id: string, data: Partial<IdeaFormData>): Promise<Idea> {
-    return this.request<Idea>(`/ideas/${id}`, {
+    const result = await this.request<Idea>(`/ideas/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    this.clearCache(); // Invalidate stats cache
+    return result;
   }
 
   /** Delete an idea by ID */
   async deleteIdea(id: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/ideas/${id}`, {
+    const result = await this.request<MessageResponse>(`/ideas/${id}`, {
       method: 'DELETE',
     });
+    this.clearCache(); // Invalidate stats cache
+    return result;
   }
 
-  /** Get idea statistics summary */
-  async getStats(): Promise<Stats> {
-    return this.request<Stats>('/ideas/stats/summary');
+  /** Get idea statistics summary (with caching) */
+  async getStats(forceRefresh: boolean = false): Promise<Stats> {
+    const now = Date.now();
+
+    // Return cached data if valid and not forcing refresh
+    if (
+      !forceRefresh &&
+      this.statsCache &&
+      now - this.statsCache.timestamp < CACHE_TTL
+    ) {
+      return this.statsCache.data;
+    }
+
+    // Fetch fresh data
+    const stats = await this.request<Stats>('/ideas/stats/summary');
+
+    // Update cache
+    this.statsCache = {
+      data: stats,
+      timestamp: now,
+    };
+
+    return stats;
   }
 
   /** Bulk update status for multiple ideas */
   async bulkUpdateStatus(ids: string[], status: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>('/ideas/bulk/status', {
+    const result = await this.request<MessageResponse>('/ideas/bulk/status', {
       method: 'PATCH',
       body: JSON.stringify({ ids, status }),
     });
+    this.clearCache(); // Invalidate stats cache
+    return result;
   }
 
   /** Get memos, optionally filtered by month and year */
@@ -342,9 +401,23 @@ class ApiService {
     return response.data;
   }
 
-  /** Migrate guest data (ideas and memos) to the authenticated user's account */
-  async migrateGuestData(ideas: IdeaFormData[], memos: { date: string; content: string }[]): Promise<{ ideas: number; memos: number }> {
-    const results = { ideas: 0, memos: 0 };
+  /** Migration result with detailed success/failure counts */
+  async migrateGuestData(ideas: IdeaFormData[], memos: { date: string; content: string }[]): Promise<{
+    ideas: number;
+    memos: number;
+    totalIdeas: number;
+    totalMemos: number;
+    failedIdeas: string[];
+    failedMemos: string[];
+  }> {
+    const results = {
+      ideas: 0,
+      memos: 0,
+      totalIdeas: ideas.length,
+      totalMemos: memos.length,
+      failedIdeas: [] as string[],
+      failedMemos: [] as string[],
+    };
 
     // Migrate ideas
     for (const idea of ideas) {
@@ -352,6 +425,7 @@ class ApiService {
         await this.createIdea(idea);
         results.ideas++;
       } catch (error) {
+        results.failedIdeas.push(idea.title);
         if (import.meta.env.DEV) {
           console.warn('Failed to migrate idea:', idea.title, error);
         }
@@ -364,6 +438,7 @@ class ApiService {
         await this.saveMemo(memo.date, memo.content);
         results.memos++;
       } catch (error) {
+        results.failedMemos.push(memo.date);
         if (import.meta.env.DEV) {
           console.warn('Failed to migrate memo:', memo.date, error);
         }

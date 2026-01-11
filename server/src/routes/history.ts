@@ -17,8 +17,8 @@ router.use(authMiddleware);
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     // Parse and validate pagination parameters
-    const limitNum = Math.min(MAX_LIMIT, Math.max(1, parseInt(req.query.limit as string) || DEFAULT_LIMIT));
-    const offsetNum = Math.max(0, parseInt(req.query.offset as string) || DEFAULT_OFFSET);
+    const limitNum = Math.min(MAX_LIMIT, Math.max(1, parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT));
+    const offsetNum = Math.max(0, parseInt(req.query.offset as string, 10) || DEFAULT_OFFSET);
 
     const result = await query(
       `SELECT h.*, i.title as idea_title
@@ -92,7 +92,7 @@ router.get('/recent', async (req: AuthRequest, res: Response) => {
       data: result.rows.map(row => ({
         date: row.date,
         action: row.action,
-        count: parseInt(row.count)
+        count: parseInt(row.count, 10)
       }))
     });
   } catch (error) {

@@ -165,24 +165,26 @@ function DailyMemo() {
                 onClick={handleSave}
                 className="icon-btn"
                 style={{ color: 'var(--color-success-600)' }}
+                aria-label="메모 저장"
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
                 onClick={() => { setMemo(savedMemo); setIsEditing(false); }}
                 className="icon-btn"
                 style={{ color: 'var(--color-error-500)' }}
+                aria-label="편집 취소"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-4 h-4" aria-hidden="true" />
               </button>
             </>
           ) : (
             <>
-              <Link to="/memos" className="icon-btn" style={{ color: 'var(--accent-primary)' }}>
-                <History className="w-4 h-4" />
+              <Link to="/memos" className="icon-btn" style={{ color: 'var(--accent-primary)' }} aria-label="메모 히스토리">
+                <History className="w-4 h-4" aria-hidden="true" />
               </Link>
-              <button onClick={() => setIsEditing(true)} className="icon-btn">
-                <Edit3 className="w-4 h-4" />
+              <button onClick={() => setIsEditing(true)} className="icon-btn" aria-label="메모 편집">
+                <Edit3 className="w-4 h-4" aria-hidden="true" />
               </button>
             </>
           )}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { IdeaForm } from '../../pages/IdeaForm';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 
@@ -49,24 +49,24 @@ vi.mock('../../components/AIFeatures', () => ({
 }));
 
 const renderIdeaForm = (route = '/new') => {
-  if (route.includes(':id')) {
-    const id = route.split('/').pop();
-    return render(
-      <MemoryRouter initialEntries={[`/edit/${id}`]}>
-        <ThemeProvider>
-          <Routes>
-            <Route path="/edit/:id" element={<IdeaForm />} />
-          </Routes>
-        </ThemeProvider>
-      </MemoryRouter>
-    );
-  }
+  const routes = [
+    { path: '/new', element: <IdeaForm /> },
+    { path: '/edit/:id', element: <IdeaForm /> },
+    { path: '/', element: <div>Home</div> },
+  ];
+
+  const initialEntry = route.includes(':id')
+    ? `/edit/${route.split('/').pop()}`
+    : route;
+
+  const router = createMemoryRouter(routes, {
+    initialEntries: [initialEntry],
+  });
+
   return render(
-    <BrowserRouter>
-      <ThemeProvider>
-        <IdeaForm />
-      </ThemeProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
   );
 };
 
@@ -249,12 +249,12 @@ describe('IdeaForm Component', () => {
     it('should call createIdea on submit in create mode', async () => {
       renderIdeaForm();
 
-      // Fill required fields
+      // Fill required fields (description must be at least 10 characters)
       fireEvent.change(screen.getByPlaceholderText('아이디어 제목을 입력하세요'), {
         target: { value: '테스트 제목' },
       });
       fireEvent.change(screen.getByPlaceholderText('아이디어에 대한 설명을 입력하세요'), {
-        target: { value: '테스트 설명' },
+        target: { value: '테스트 설명입니다. 충분히 긴 설명입니다.' },
       });
       fireEvent.change(screen.getByPlaceholderText('예: 웹서비스, 모바일앱'), {
         target: { value: '웹서비스' },
@@ -267,7 +267,7 @@ describe('IdeaForm Component', () => {
       await waitFor(() => {
         expect(mockCreateIdea).toHaveBeenCalledWith({
           title: '테스트 제목',
-          description: '테스트 설명',
+          description: '테스트 설명입니다. 충분히 긴 설명입니다.',
           category: '웹서비스',
           tags: [],
           status: 'draft',
@@ -277,6 +277,9 @@ describe('IdeaForm Component', () => {
           potentialRevenue: '',
           resources: '',
           timeline: '',
+          deadline: '',
+          reminderEnabled: false,
+          reminderDays: 3,
         });
       });
     });
@@ -284,12 +287,12 @@ describe('IdeaForm Component', () => {
     it('should show success toast and navigate on successful submit', async () => {
       renderIdeaForm();
 
-      // Fill required fields
+      // Fill required fields (description must be at least 10 characters)
       fireEvent.change(screen.getByPlaceholderText('아이디어 제목을 입력하세요'), {
         target: { value: '테스트 제목' },
       });
       fireEvent.change(screen.getByPlaceholderText('아이디어에 대한 설명을 입력하세요'), {
-        target: { value: '테스트 설명' },
+        target: { value: '테스트 설명입니다. 충분히 긴 설명입니다.' },
       });
       fireEvent.change(screen.getByPlaceholderText('예: 웹서비스, 모바일앱'), {
         target: { value: '웹서비스' },
@@ -308,11 +311,12 @@ describe('IdeaForm Component', () => {
 
       renderIdeaForm();
 
+      // Fill required fields (description must be at least 10 characters)
       fireEvent.change(screen.getByPlaceholderText('아이디어 제목을 입력하세요'), {
         target: { value: '테스트 제목' },
       });
       fireEvent.change(screen.getByPlaceholderText('아이디어에 대한 설명을 입력하세요'), {
-        target: { value: '테스트 설명' },
+        target: { value: '테스트 설명입니다. 충분히 긴 설명입니다.' },
       });
       fireEvent.change(screen.getByPlaceholderText('예: 웹서비스, 모바일앱'), {
         target: { value: '웹서비스' },
@@ -331,7 +335,7 @@ describe('IdeaForm Component', () => {
       mockGetIdea.mockResolvedValue({
         id: 'test-id',
         title: '기존 제목',
-        description: '기존 설명',
+        description: '기존 설명입니다. 충분히 긴 설명입니다.',
         category: '기술',
         tags: ['태그1', '태그2'],
         status: 'in-progress',
@@ -345,15 +349,7 @@ describe('IdeaForm Component', () => {
     });
 
     it('should render form with "아이디어 수정" title in edit mode', async () => {
-      render(
-        <MemoryRouter initialEntries={['/edit/test-id']}>
-          <ThemeProvider>
-            <Routes>
-              <Route path="/edit/:id" element={<IdeaForm />} />
-            </Routes>
-          </ThemeProvider>
-        </MemoryRouter>
-      );
+      renderIdeaForm('/edit/:id/test-id');
 
       await waitFor(() => {
         expect(screen.getByText('아이디어 수정')).toBeInTheDocument();
@@ -361,19 +357,11 @@ describe('IdeaForm Component', () => {
     });
 
     it('should load existing idea data in edit mode', async () => {
-      render(
-        <MemoryRouter initialEntries={['/edit/test-id']}>
-          <ThemeProvider>
-            <Routes>
-              <Route path="/edit/:id" element={<IdeaForm />} />
-            </Routes>
-          </ThemeProvider>
-        </MemoryRouter>
-      );
+      renderIdeaForm('/edit/:id/test-id');
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('기존 제목')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('기존 설명')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('기존 설명입니다. 충분히 긴 설명입니다.')).toBeInTheDocument();
         expect(screen.getByDisplayValue('기술')).toBeInTheDocument();
         expect(screen.getByText('태그1')).toBeInTheDocument();
         expect(screen.getByText('태그2')).toBeInTheDocument();
@@ -381,15 +369,7 @@ describe('IdeaForm Component', () => {
     });
 
     it('should call updateIdea on submit in edit mode', async () => {
-      render(
-        <MemoryRouter initialEntries={['/edit/test-id']}>
-          <ThemeProvider>
-            <Routes>
-              <Route path="/edit/:id" element={<IdeaForm />} />
-            </Routes>
-          </ThemeProvider>
-        </MemoryRouter>
-      );
+      renderIdeaForm('/edit/:id/test-id');
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('기존 제목')).toBeInTheDocument();
@@ -413,15 +393,7 @@ describe('IdeaForm Component', () => {
     it('should navigate to home when idea not found', async () => {
       mockGetIdea.mockResolvedValue(null);
 
-      render(
-        <MemoryRouter initialEntries={['/edit/invalid-id']}>
-          <ThemeProvider>
-            <Routes>
-              <Route path="/edit/:id" element={<IdeaForm />} />
-            </Routes>
-          </ThemeProvider>
-        </MemoryRouter>
-      );
+      renderIdeaForm('/edit/:id/invalid-id');
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith('/');
@@ -429,15 +401,7 @@ describe('IdeaForm Component', () => {
     });
 
     it('should render "수정하기" button in edit mode', async () => {
-      render(
-        <MemoryRouter initialEntries={['/edit/test-id']}>
-          <ThemeProvider>
-            <Routes>
-              <Route path="/edit/:id" element={<IdeaForm />} />
-            </Routes>
-          </ThemeProvider>
-        </MemoryRouter>
-      );
+      renderIdeaForm('/edit/:id/test-id');
 
       await waitFor(() => {
         expect(screen.getByText('수정하기')).toBeInTheDocument();

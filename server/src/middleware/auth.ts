@@ -16,13 +16,24 @@ const getJwtSecret = (): string => {
 };
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+  // Try to get token from HttpOnly cookie first, then fall back to Authorization header
+  let token: string | undefined;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No token provided' });
+  // Check HttpOnly cookie (more secure)
+  if (req.cookies?.authToken) {
+    token = req.cookies.authToken;
+  }
+  // Fall back to Authorization header for backward compatibility
+  else {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
 
   try {
     // Check if token is blacklisted

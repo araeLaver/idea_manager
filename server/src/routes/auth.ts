@@ -5,9 +5,35 @@ import crypto from 'crypto';
 import { query, blacklistToken, hashToken } from '../database';
 import { authMiddleware, AuthRequest, getJwtSecret } from '../middleware/auth';
 import { createLogger } from '../utils/logger';
+import { sendPasswordResetEmail, isEmailServiceAvailable } from '../utils/email';
 
 const log = createLogger('auth');
 const router = Router();
+
+// Cookie configuration for JWT token
+const COOKIE_NAME = 'authToken';
+const getCookieOptions = () => ({
+  httpOnly: true, // Prevents JavaScript access (XSS protection)
+  secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+  sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  path: '/',
+});
+
+// Helper to set auth cookie
+const setAuthCookie = (res: Response, token: string) => {
+  res.cookie(COOKIE_NAME, token, getCookieOptions());
+};
+
+// Helper to clear auth cookie
+const clearAuthCookie = (res: Response) => {
+  res.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
+    path: '/',
+  });
+};
 
 // Password validation function
 const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
@@ -97,6 +123,9 @@ router.post('/register', async (req: Request, res: Response) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    // Set HttpOnly cookie
+    setAuthCookie(res, token);
+
     res.status(201).json({
       user: {
         id: user.id,
@@ -104,7 +133,7 @@ router.post('/register', async (req: Request, res: Response) => {
         name: user.name,
         createdAt: user.created_at
       },
-      token
+      token // Also return token for backward compatibility
     });
   } catch (error) {
     log.error({ error }, 'Register error');
@@ -147,6 +176,9 @@ router.post('/login', async (req: Request, res: Response) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    // Set HttpOnly cookie
+    setAuthCookie(res, token);
+
     res.json({
       user: {
         id: user.id,
@@ -154,7 +186,7 @@ router.post('/login', async (req: Request, res: Response) => {
         name: user.name,
         createdAt: user.created_at
       },
-      token
+      token // Also return token for backward compatibility
     });
   } catch (error) {
     log.error({ error }, 'Login error');
@@ -280,6 +312,12 @@ router.put('/password', authMiddleware, async (req: AuthRequest, res: Response) 
       [newPasswordHash, req.userId]
     );
 
+    // Invalidate any pending password reset tokens for this user
+    await query(
+      'UPDATE idea_manager.password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL',
+      [req.userId]
+    );
+
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
     log.error({ error }, 'Change password error');
@@ -303,6 +341,9 @@ router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response) =
     // Add token to blacklist
     const expiresAt = new Date(decoded.exp * 1000);
     await blacklistToken(req.token, req.userId, expiresAt);
+
+    // Clear HttpOnly cookie
+    clearAuthCookie(res);
 
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
@@ -353,14 +394,25 @@ router.post('/password-reset/request', async (req: Request, res: Response) => {
       [userId, tokenHash, expiresAt]
     );
 
-    // In production, send email here
-    // For now, log the token (REMOVE IN PRODUCTION!)
-    if (process.env.NODE_ENV !== 'production') {
-      log.debug({ email }, `Password reset token: ${resetToken}`);
-    }
+    // Get frontend URL for reset link
+    const frontendUrl = process.env.FRONTEND_URL?.split(',')[0]?.trim() || 'http://localhost:5173';
 
-    // TODO: Send email with reset link
-    // The reset link should be: ${FRONTEND_URL}/reset-password?token=${resetToken}
+    // Send password reset email
+    if (isEmailServiceAvailable()) {
+      const emailSent = await sendPasswordResetEmail(email, resetToken, frontendUrl);
+      if (!emailSent) {
+        log.warn({ email }, 'Failed to send password reset email');
+      }
+    } else {
+      // Email service not configured - log in development only
+      if (process.env.NODE_ENV !== 'production') {
+        log.warn('Email service not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD.');
+        log.debug({ email }, `Password reset token: ${resetToken}`);
+        log.debug(`Reset link: ${frontendUrl}/reset-password?token=${resetToken}`);
+      } else {
+        log.error('Email service not configured in production. Password reset emails cannot be sent.');
+      }
+    }
 
     res.json(successMessage);
   } catch (error) {

@@ -45,8 +45,10 @@ export function AIAssistant() {
     try {
       const results = await aiService.generateIdeaSuggestions(keyword, selectedCategory);
       setSuggestions(results);
-    } catch {
-      // Error handled silently - user can retry
+    } catch (error) {
+      // Show error message to user
+      const errorMessage = error instanceof Error ? error.message : '아이디어 생성 중 오류가 발생했습니다.';
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }

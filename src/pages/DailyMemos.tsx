@@ -223,24 +223,25 @@ export function DailyMemos() {
                   <div className="flex gap-2">
                     {editingDate === date ? (
                       <>
-                        <button onClick={() => handleSave(date)} className="btn btn-primary btn-sm">
-                          <Save className="w-4 h-4" />
+                        <button onClick={() => handleSave(date)} className="btn btn-primary btn-sm" aria-label="메모 저장">
+                          <Save className="w-4 h-4" aria-hidden="true" />
                         </button>
-                        <button onClick={handleCancel} className="btn btn-secondary btn-sm">
-                          <X className="w-4 h-4" />
+                        <button onClick={handleCancel} className="btn btn-secondary btn-sm" aria-label="편집 취소">
+                          <X className="w-4 h-4" aria-hidden="true" />
                         </button>
                       </>
                     ) : (
                       <>
-                        <button onClick={() => handleEdit(date, content)} className="icon-btn">
-                          <Edit3 className="w-4 h-4" />
+                        <button onClick={() => handleEdit(date, content)} className="icon-btn" aria-label={`${date} 메모 편집`}>
+                          <Edit3 className="w-4 h-4" aria-hidden="true" />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(date)}
                           className="icon-btn"
                           style={{ color: 'var(--color-error-500)' }}
+                          aria-label={`${date} 메모 삭제`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
                         </button>
                       </>
                     )}

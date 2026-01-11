@@ -21,7 +21,8 @@ export function validateEmail(email: string): FieldValidation {
     return { field: 'email', isValid: false, error: '이메일을 입력해주세요' };
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // RFC 5322 compliant email validation (simplified but robust)
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   if (!emailRegex.test(trimmed)) {
     return { field: 'email', isValid: false, error: '올바른 이메일 형식이 아닙니다' };
   }
@@ -182,20 +183,23 @@ function arraysEqual(a: string[], b: string[]): boolean {
 }
 
 // Efficient form data comparison (avoids JSON.stringify)
-export function isFormDataEqual<T extends Record<string, unknown>>(
+export function isFormDataEqual<T extends object>(
   a: T | null,
   b: T | null
 ): boolean {
   if (a === null || b === null) return a === b;
 
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
+  const objA = a as Record<string, unknown>;
+  const objB = b as Record<string, unknown>;
+
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
 
   if (keysA.length !== keysB.length) return false;
 
   for (const key of keysA) {
-    const valA = a[key];
-    const valB = b[key];
+    const valA = objA[key];
+    const valB = objB[key];
 
     // Handle arrays (like tags)
     if (Array.isArray(valA) && Array.isArray(valB)) {

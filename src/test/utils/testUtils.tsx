@@ -1,7 +1,53 @@
-import { ReactNode } from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import { ReactNode, createContext, useContext } from 'react';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 import { vi } from 'vitest';
+
+// Mock Toast Context
+const MockToastContext = createContext({
+  toasts: [],
+  showToast: vi.fn(),
+  removeToast: vi.fn(),
+});
+
+export const MockToastProvider = ({ children }: { children: ReactNode }) => (
+  <MockToastContext.Provider value={{ toasts: [], showToast: vi.fn(), removeToast: vi.fn() }}>
+    {children}
+  </MockToastContext.Provider>
+);
+
+// Mock Notification Context
+const MockNotificationContext = createContext({
+  notifications: [],
+  unreadCount: 0,
+  addNotification: vi.fn(),
+  markAsRead: vi.fn(),
+  markAllAsRead: vi.fn(),
+  removeNotification: vi.fn(),
+  clearAll: vi.fn(),
+  requestPermission: vi.fn(),
+  hasPermission: false,
+});
+
+export const MockNotificationProvider = ({ children }: { children: ReactNode }) => (
+  <MockNotificationContext.Provider value={{
+    notifications: [],
+    unreadCount: 0,
+    addNotification: vi.fn(),
+    markAsRead: vi.fn(),
+    markAllAsRead: vi.fn(),
+    removeNotification: vi.fn(),
+    clearAll: vi.fn(),
+    requestPermission: vi.fn().mockResolvedValue(false),
+    hasPermission: false,
+  }}>
+    {children}
+  </MockNotificationContext.Provider>
+);
+
+// Export mock hooks for use in vi.mock
+export const mockUseToast = () => useContext(MockToastContext);
+export const mockUseNotifications = () => useContext(MockNotificationContext);
 
 // Mock AuthContext for testing
 export const mockAuthContext = {
@@ -51,14 +97,36 @@ export const mockDataContext = {
   deleteMemo: vi.fn(),
 };
 
-// Create wrapper with all necessary providers
-export const createTestWrapper = () => {
-  return ({ children }: { children: ReactNode }) => (
-    <BrowserRouter>
+// Create wrapper with all necessary providers (using data router for useBlocker support)
+export const createTestWrapper = (initialPath: string = '/') => {
+  return ({ children }: { children: ReactNode }) => {
+    const router = createMemoryRouter(
+      [{ path: '*', element: children }],
+      { initialEntries: [initialPath] }
+    );
+
+    return (
       <ThemeProvider>
-        {children}
+        <MockToastProvider>
+          <MockNotificationProvider>
+            <RouterProvider router={router} />
+          </MockNotificationProvider>
+        </MockToastProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    );
+  };
+};
+
+// Simple wrapper without router (for unit tests that don't need routing)
+export const createSimpleWrapper = () => {
+  return ({ children }: { children: ReactNode }) => (
+    <ThemeProvider>
+      <MockToastProvider>
+        <MockNotificationProvider>
+          {children}
+        </MockNotificationProvider>
+      </MockToastProvider>
+    </ThemeProvider>
   );
 };
 

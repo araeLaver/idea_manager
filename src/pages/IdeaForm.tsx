@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams, Link, useBlocker } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Calendar as CalendarIcon, Clock, Bell, AlertTriangle } from 'lucide-react';
-import type { IdeaFormData, Idea, IdeaStatus, IdeaPriority } from '../types';
+import type { IdeaFormData, IdeaStatus, IdeaPriority } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -44,6 +44,9 @@ export function IdeaForm() {
   const [loadingIdea, setLoadingIdea] = useState(isEdit);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  // Ref to prevent multiple idea loads
+  const ideaLoadedRef = useRef(false);
+
   // Check if form has unsaved changes (memoized for performance)
   const isDirty = useMemo(() => {
     if (!initialFormData) return false;
@@ -78,8 +81,10 @@ export function IdeaForm() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty, isSubmitting]);
 
+  // Load idea data for edit mode (only once per id)
   useEffect(() => {
-    if (isEdit && id) {
+    if (isEdit && id && !ideaLoadedRef.current) {
+      ideaLoadedRef.current = true;
       setLoadingIdea(true);
       getIdea(id).then(idea => {
         if (idea) {
@@ -107,6 +112,10 @@ export function IdeaForm() {
         setLoadingIdea(false);
       });
     }
+    // Reset ref when id changes
+    return () => {
+      if (id) ideaLoadedRef.current = false;
+    };
   }, [id, isEdit, navigate, getIdea]);
 
   const handleSubmit = async (e: React.FormEvent) => {

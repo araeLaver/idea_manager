@@ -171,8 +171,8 @@ export function ExportImport({ onClose }: ExportImportProps) {
           <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
             내보내기 / 가져오기
           </h2>
-          <button onClick={onClose} className="icon-btn">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="icon-btn" aria-label="닫기">
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 

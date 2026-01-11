@@ -220,11 +220,12 @@ export function IdeaList() {
               onClick={toggleSelectAll}
               className="icon-btn"
               title={selectedIds.size === filteredIdeas.length ? '전체 해제' : '전체 선택'}
+              aria-label={selectedIds.size === filteredIdeas.length ? '전체 해제' : '전체 선택'}
             >
               {selectedIds.size === filteredIdeas.length ? (
-                <CheckSquare className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} />
+                <CheckSquare className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} aria-hidden="true" />
               ) : (
-                <Square className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} />
+                <Square className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} aria-hidden="true" />
               )}
             </button>
             <span className="text-sm font-medium" style={{ color: 'var(--color-primary-700)' }}>
@@ -234,8 +235,9 @@ export function IdeaList() {
               onClick={clearSelection}
               className="icon-btn"
               title="선택 해제"
+              aria-label="선택 해제"
             >
-              <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+              <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} aria-hidden="true" />
             </button>
           </div>
 
@@ -329,11 +331,12 @@ export function IdeaList() {
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleSelect(idea.id); }}
                     className="flex-shrink-0 mt-0.5"
+                    aria-label={selectedIds.has(idea.id) ? `${idea.title} 선택 해제` : `${idea.title} 선택`}
                   >
                     {selectedIds.has(idea.id) ? (
-                      <CheckSquare className="w-4 h-4" style={{ color: 'var(--color-primary-600)' }} />
+                      <CheckSquare className="w-4 h-4" style={{ color: 'var(--color-primary-600)' }} aria-hidden="true" />
                     ) : (
-                      <Square className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                      <Square className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
                     )}
                   </button>
                   <Link
@@ -349,8 +352,9 @@ export function IdeaList() {
                     to={`/idea/${idea.id}`}
                     className="icon-btn"
                     style={{ width: '1.75rem', height: '1.75rem' }}
+                    aria-label={`${idea.title} 상세 보기`}
                   >
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                   </Link>
                   <button
                     onClick={() => handleDeleteClick(idea.id)}
@@ -360,8 +364,9 @@ export function IdeaList() {
                       height: '1.75rem',
                       color: 'var(--color-error-500)',
                     }}
+                    aria-label={`${idea.title} 삭제`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -422,11 +427,12 @@ export function IdeaList() {
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleSelect(idea.id); }}
                     className="flex-shrink-0 mt-1"
+                    aria-label={selectedIds.has(idea.id) ? `${idea.title} 선택 해제` : `${idea.title} 선택`}
                   >
                     {selectedIds.has(idea.id) ? (
-                      <CheckSquare className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} />
+                      <CheckSquare className="w-5 h-5" style={{ color: 'var(--color-primary-600)' }} aria-hidden="true" />
                     ) : (
-                      <Square className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+                      <Square className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
                     )}
                   </button>
                   <div className="flex-1 min-w-0">
@@ -464,15 +470,16 @@ export function IdeaList() {
 
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link to={`/idea/${idea.id}`} className="icon-btn">
-                      <Eye className="w-4 h-4" />
+                    <Link to={`/idea/${idea.id}`} className="icon-btn" aria-label={`${idea.title} 상세 보기`}>
+                      <Eye className="w-4 h-4" aria-hidden="true" />
                     </Link>
                     <button
                       onClick={() => handleDeleteClick(idea.id)}
                       className="icon-btn"
                       style={{ color: 'var(--color-error-500)' }}
+                      aria-label={`${idea.title} 삭제`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
                     </button>
                   </div>
                   <div className="flex items-center text-xs" style={{ color: 'var(--text-tertiary)' }}>

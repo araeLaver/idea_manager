@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -92,8 +93,8 @@ app.use(helmet({
 
 // Rate limiting configuration (configurable via environment variables)
 const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // default: 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // default: 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false
@@ -101,8 +102,8 @@ const generalLimiter = rateLimit({
 
 // Stricter rate limiting for auth endpoints (prevent brute force)
 const authLimiter = rateLimit({
-  windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000'), // default: 15 minutes
-  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10'),
+  windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000', 10), // default: 15 minutes
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10', 10),
   message: { error: 'Too many authentication attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -111,9 +112,28 @@ const authLimiter = rateLimit({
 
 // Very strict rate limiting for password reset
 const passwordResetLimiter = rateLimit({
-  windowMs: parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_WINDOW_MS || '3600000'), // default: 1 hour
-  max: parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_MAX_REQUESTS || '3'),
+  windowMs: parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_WINDOW_MS || '3600000', 10), // default: 1 hour
+  max: parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_MAX_REQUESTS || '3', 10),
   message: { error: 'Too many password reset attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiting for write operations (create, update, delete)
+const writeOperationLimiter = rateLimit({
+  windowMs: parseInt(process.env.WRITE_RATE_LIMIT_WINDOW_MS || '60000', 10), // default: 1 minute
+  max: parseInt(process.env.WRITE_RATE_LIMIT_MAX_REQUESTS || '30', 10), // 30 writes per minute
+  message: { error: 'Too many write operations, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'GET' // Only limit write operations
+});
+
+// Rate limiting for bulk operations
+const bulkOperationLimiter = rateLimit({
+  windowMs: parseInt(process.env.BULK_RATE_LIMIT_WINDOW_MS || '60000', 10), // default: 1 minute
+  max: parseInt(process.env.BULK_RATE_LIMIT_MAX_REQUESTS || '10', 10), // 10 bulk ops per minute
+  message: { error: 'Too many bulk operations, please try again later' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -158,6 +178,9 @@ app.use(cors({
 // Apply general rate limiting to all routes
 app.use(generalLimiter);
 
+// Cookie parser for HttpOnly token cookies
+app.use(cookieParser());
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -193,8 +216,9 @@ app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
 app.use('/api/v1/auth/password-reset', passwordResetLimiter);
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/ideas', ideasRoutes);
-app.use('/api/v1/memos', memosRoutes);
+app.use('/api/v1/ideas/bulk', bulkOperationLimiter); // Bulk operations have stricter limits
+app.use('/api/v1/ideas', writeOperationLimiter, ideasRoutes);
+app.use('/api/v1/memos', writeOperationLimiter, memosRoutes);
 app.use('/api/v1/history', historyRoutes);
 
 // Backward compatible routes (redirect to v1)
@@ -202,8 +226,9 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/password-reset', passwordResetLimiter);
 app.use('/api/auth', authRoutes);
-app.use('/api/ideas', ideasRoutes);
-app.use('/api/memos', memosRoutes);
+app.use('/api/ideas/bulk', bulkOperationLimiter); // Bulk operations have stricter limits
+app.use('/api/ideas', writeOperationLimiter, ideasRoutes);
+app.use('/api/memos', writeOperationLimiter, memosRoutes);
 app.use('/api/history', historyRoutes);
 
 // Health check (both versioned and non-versioned)

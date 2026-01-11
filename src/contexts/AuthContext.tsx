@@ -19,6 +19,10 @@ interface GuestDataInfo {
 interface MigrationResult {
   ideas: number;
   memos: number;
+  totalIdeas: number;
+  totalMemos: number;
+  failedIdeas: string[];
+  failedMemos: string[];
 }
 
 interface AuthContextType {

@@ -224,8 +224,8 @@ export function History() {
                   </div>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Link to={`/idea/${idea.id}`} className="icon-btn"><Eye className="w-4 h-4" /></Link>
-                  <Link to={`/edit/${idea.id}`} className="icon-btn"><Edit className="w-4 h-4" /></Link>
+                  <Link to={`/idea/${idea.id}`} className="icon-btn" aria-label={`${idea.title} 상세 보기`}><Eye className="w-4 h-4" aria-hidden="true" /></Link>
+                  <Link to={`/edit/${idea.id}`} className="icon-btn" aria-label={`${idea.title} 편집`}><Edit className="w-4 h-4" aria-hidden="true" /></Link>
                 </div>
               </div>
             </div>
@@ -270,8 +270,8 @@ export function History() {
                   </td>
                   <td>
                     <div className="flex justify-center gap-1">
-                      <Link to={`/idea/${idea.id}`} className="icon-btn"><Eye className="w-4 h-4" /></Link>
-                      <Link to={`/edit/${idea.id}`} className="icon-btn"><Edit className="w-4 h-4" /></Link>
+                      <Link to={`/idea/${idea.id}`} className="icon-btn" aria-label={`${idea.title} 상세 보기`}><Eye className="w-4 h-4" aria-hidden="true" /></Link>
+                      <Link to={`/edit/${idea.id}`} className="icon-btn" aria-label={`${idea.title} 편집`}><Edit className="w-4 h-4" aria-hidden="true" /></Link>
                     </div>
                   </td>
                 </tr>
