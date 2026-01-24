@@ -74,7 +74,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const addNotification = useCallback((notification: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => {
     const newNotification: AppNotification = {
       ...notification,
-      id: `notif_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
+      id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       read: false,
     };

@@ -86,8 +86,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const fetchedStats = await api.getStats();
       setStats(fetchedStats);
     } catch (error) {
-      // Stats fetch is non-critical, log for debugging
-      console.debug('Stats fetch failed:', error);
+      // Stats fetch is non-critical, log for debugging in development only
+      if (import.meta.env.DEV) {
+        console.debug('Stats fetch failed:', error);
+      }
     }
   }, [isAuthenticated, isGuest]);
 
@@ -130,16 +132,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
 
     try {
-      await api.updateIdea(id, ideaData);
-      // Refresh to get accurate server state
-      await Promise.all([refreshIdeas(), refreshStats()]);
+      const updatedIdea = await api.updateIdea(id, ideaData);
+      // Update with server response instead of refetching all ideas
+      setIdeas(prevIdeas =>
+        prevIdeas.map(idea => idea.id === id ? updatedIdea : idea)
+      );
+      await refreshStats();
     } catch (err) {
       // Rollback on error
       setIdeas(previousIdeas);
       setError(err instanceof Error ? err.message : 'Failed to update idea');
       throw err;
     }
-  }, [isGuest, ideas, refreshIdeas, refreshStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshIdeas omitted for optimistic update
+  }, [isGuest, ideas, refreshStats]);
 
   const deleteIdea = useCallback(async (id: string): Promise<void> => {
     // Handle guest mode
@@ -158,14 +164,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       await api.deleteIdea(id);
-      await Promise.all([refreshIdeas(), refreshStats()]);
+      // Optimistic delete is sufficient, just refresh stats
+      await refreshStats();
     } catch (err) {
       // Rollback on error
       setIdeas(previousIdeas);
       setError(err instanceof Error ? err.message : 'Failed to delete idea');
       throw err;
     }
-  }, [isGuest, ideas, refreshIdeas, refreshStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshIdeas omitted for optimistic delete
+  }, [isGuest, ideas, refreshStats]);
 
   const getIdea = useCallback(async (id: string): Promise<Idea | null> => {
     // Handle guest mode
@@ -235,14 +243,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       await api.bulkUpdateStatus(ids, status);
-      await Promise.all([refreshIdeas(), refreshStats()]);
+      // Optimistic update is sufficient, just refresh stats
+      await refreshStats();
     } catch (err) {
       // Rollback on error
       setIdeas(previousIdeas);
       setError(err instanceof Error ? err.message : 'Failed to bulk update status');
       throw err;
     }
-  }, [isGuest, ideas, refreshIdeas, refreshStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshIdeas omitted for optimistic bulk update
+  }, [isGuest, ideas, refreshStats]);
 
   useEffect(() => {
     if (isAuthenticated || isGuest) {

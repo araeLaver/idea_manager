@@ -4,6 +4,13 @@
  * @module aiService
  */
 
+/** Cryptographically secure random number generator (0 to max-1) */
+const secureRandomInt = (max: number): number => {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] % max;
+};
+
 /** Suggested idea structure from AI generation */
 interface IdeaSuggestion {
   title: string;
@@ -347,10 +354,11 @@ export const aiService = {
             suggestedTags.push(...fallbackTags);
           }
           
-          // 추가 일반적인 태그들
+          // 추가 일반적인 태그들 (텍스트 길이 기반 결정적 선택)
           const commonTags = ["혁신", "창의", "솔루션", "아이디어", "프로젝트"];
-          commonTags.forEach(tag => {
-            if (Math.random() > 0.7 && !suggestedTags.includes(tag)) {
+          const textLen = text.length;
+          commonTags.forEach((tag, idx) => {
+            if ((textLen + idx) % 3 === 0 && !suggestedTags.includes(tag)) {
               suggestedTags.push(tag);
             }
           });
@@ -395,10 +403,10 @@ export const aiService = {
       suggestions = [...suggestions, ...dynamicIdeas];
     }
 
-    // Fisher-Yates 셔플 알고리즘으로 랜덤하게 섞기
+    // Fisher-Yates 셔플 알고리즘으로 랜덤하게 섞기 (crypto 기반)
     const shuffled = [...suggestions];
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = secureRandomInt(i + 1);
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled.slice(0, Math.min(5, shuffled.length));
@@ -412,10 +420,10 @@ export const aiService = {
     const usedCombinations = new Set<string>();
 
     for (let i = 0; i < count * 3 && results.length < count; i++) {
-      const concept = ideaTemplates.concepts[Math.floor(Math.random() * ideaTemplates.concepts.length)];
-      const domain = keyword || ideaTemplates.domains[Math.floor(Math.random() * ideaTemplates.domains.length)];
-      const action = ideaTemplates.actions[Math.floor(Math.random() * ideaTemplates.actions.length)];
-      const value = ideaTemplates.values[Math.floor(Math.random() * ideaTemplates.values.length)];
+      const concept = ideaTemplates.concepts[secureRandomInt(ideaTemplates.concepts.length)];
+      const domain = keyword || ideaTemplates.domains[secureRandomInt(ideaTemplates.domains.length)];
+      const action = ideaTemplates.actions[secureRandomInt(ideaTemplates.actions.length)];
+      const value = ideaTemplates.values[secureRandomInt(ideaTemplates.values.length)];
 
       const combinationKey = `${concept}-${domain}-${action}`;
       if (usedCombinations.has(combinationKey)) continue;
@@ -441,7 +449,7 @@ export const aiService = {
         description,
         category: ideaCategory,
         tags: [concept.replace(' ', ''), domain, action.split(' ')[0]],
-        priority: Math.random() > 0.5 ? 'medium' : 'high'
+        priority: secureRandomInt(2) === 0 ? 'medium' : 'high'
       });
     }
 

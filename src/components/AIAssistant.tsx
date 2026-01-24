@@ -185,7 +185,7 @@ export function AIAssistant() {
                   
                   <div className="grid gap-4">
                     {suggestions.map((suggestion, index) => (
-                      <div key={index} className="card group animate-slide-in-up" style={{animationDelay: `${index * 100}ms`}}>
+                      <div key={`${suggestion.title}-${suggestion.category}`} className="card group animate-slide-in-up" style={{animationDelay: `${index * 100}ms`}}>
                         <div className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <h4 className="text-base font-semibold text-primary group-hover:text-accent transition-colors flex-1">
@@ -206,9 +206,9 @@ export function AIAssistant() {
                           </p>
                           
                           <div className="flex flex-wrap gap-1 mb-4">
-                            {suggestion.tags.map((tag, tagIndex) => (
+                            {suggestion.tags.map((tag) => (
                               <span
-                                key={tagIndex}
+                                key={tag}
                                 className="inline-flex items-center px-2 py-1 rounded text-xs bg-accent text-accent font-medium"
                               >
                                 {tag}

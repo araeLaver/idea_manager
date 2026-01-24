@@ -26,6 +26,7 @@ interface CacheEntry<T> {
 }
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes for stats cache (reduces API calls)
+const REQUEST_TIMEOUT = 30 * 1000; // 30 seconds timeout for API requests
 
 /**
  * Custom error class for API errors with status code and auth error detection
@@ -112,9 +113,9 @@ class ApiService {
   }
 
   /**
-   * Make an authenticated API request.
+   * Make an authenticated API request with timeout.
    * Uses credentials: 'include' to send HttpOnly cookies automatically.
-   * @throws {ApiError} When the request fails
+   * @throws {ApiError} When the request fails or times out
    */
   private async request<T>(
     endpoint: string,
@@ -130,26 +131,40 @@ class ApiService {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${this.legacyToken}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-      credentials: 'include', // Send HttpOnly cookies with every request
-    });
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
-      const errorMessage = errorData.error || 'Request failed';
-      const isAuthError = isTokenExpiredError(response.status, errorMessage);
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+        credentials: 'include', // Send HttpOnly cookies with every request
+        signal: controller.signal,
+      });
 
-      // Clear token if it's an auth error
-      if (isAuthError) {
-        this.setToken(null);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+        const errorMessage = errorData.error || 'Request failed';
+        const isAuthError = isTokenExpiredError(response.status, errorMessage);
+
+        // Clear token if it's an auth error
+        if (isAuthError) {
+          this.setToken(null);
+        }
+
+        throw new ApiError(errorMessage, response.status, isAuthError);
       }
 
-      throw new ApiError(errorMessage, response.status, isAuthError);
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError('요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.', 408);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    return response.json();
   }
 
   /** Register a new user account */

@@ -6,7 +6,7 @@ import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { AIFeatures } from '../components/AIFeatures';
-import { STATUS_LABELS, PRIORITY_LABELS } from '../utils/labelMappings';
+import { STATUS_LABELS, PRIORITY_LABELS, STATUSES, PRIORITIES } from '../utils/labelMappings';
 import { validateIdeaForm, isFormDataEqual } from '../utils/validation';
 
 export function IdeaForm() {
@@ -407,8 +407,8 @@ export function IdeaForm() {
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as IdeaStatus })}
               >
-                {(Object.entries(STATUS_LABELS) as [IdeaStatus, string][]).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+                {STATUSES.map((status) => (
+                  <option key={status} value={status}>{STATUS_LABELS[status]}</option>
                 ))}
               </select>
             </div>
@@ -422,8 +422,8 @@ export function IdeaForm() {
               value={formData.priority}
               onChange={(e) => setFormData({ ...formData, priority: e.target.value as IdeaPriority })}
             >
-              {(Object.entries(PRIORITY_LABELS) as [IdeaPriority, string][]).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+              {PRIORITIES.map((priority) => (
+                <option key={priority} value={priority}>{PRIORITY_LABELS[priority]}</option>
               ))}
             </select>
           </div>
