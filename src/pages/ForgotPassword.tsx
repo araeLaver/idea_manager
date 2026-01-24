@@ -133,13 +133,14 @@ export function ForgotPassword() {
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">이메일</label>
+            <label htmlFor="forgot-email" className="form-label">이메일</label>
             <div className="relative">
               <Mail
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
                 style={{ color: 'var(--text-tertiary)' }}
               />
               <input
+                id="forgot-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

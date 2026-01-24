@@ -216,11 +216,12 @@ export function Profile() {
 
         <form onSubmit={handleProfileSubmit}>
           <div className="form-group">
-            <label className="form-label">
+            <label htmlFor="profile-name" className="form-label">
               <User className="w-4 h-4 inline mr-1" />
               이름
             </label>
             <input
+              id="profile-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -229,11 +230,12 @@ export function Profile() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">
+            <label htmlFor="profile-email" className="form-label">
               <Mail className="w-4 h-4 inline mr-1" />
               이메일
             </label>
             <input
+              id="profile-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -281,9 +283,10 @@ export function Profile() {
 
         <form onSubmit={handlePasswordSubmit}>
           <div className="form-group">
-            <label className="form-label">현재 비밀번호</label>
+            <label htmlFor="profile-current-password" className="form-label">현재 비밀번호</label>
             <div className="relative">
               <input
+                id="profile-current-password"
                 type={showCurrentPassword ? 'text' : 'password'}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
@@ -302,9 +305,10 @@ export function Profile() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">새 비밀번호</label>
+            <label htmlFor="profile-new-password" className="form-label">새 비밀번호</label>
             <div className="relative">
               <input
+                id="profile-new-password"
                 type={showNewPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -323,9 +327,10 @@ export function Profile() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">새 비밀번호 확인</label>
+            <label htmlFor="profile-confirm-password" className="form-label">새 비밀번호 확인</label>
             <div className="relative">
               <input
+                id="profile-confirm-password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

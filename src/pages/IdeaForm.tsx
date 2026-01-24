@@ -500,9 +500,10 @@ export function IdeaForm() {
 
           {/* Tags */}
           <div className="form-group">
-            <label className="form-label">태그</label>
+            <label htmlFor="idea-tags" className="form-label">태그</label>
             <div className="flex gap-2 mb-3">
               <input
+                id="idea-tags"
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
@@ -537,8 +538,9 @@ export function IdeaForm() {
 
           {/* Target Market */}
           <div className="form-group">
-            <label className="form-label">타겟 시장</label>
+            <label htmlFor="idea-target-market" className="form-label">타겟 시장</label>
             <textarea
+              id="idea-target-market"
               value={formData.targetMarket}
               onChange={(e) => setFormData({ ...formData, targetMarket: e.target.value })}
               rows={3}
@@ -548,8 +550,9 @@ export function IdeaForm() {
 
           {/* Potential Revenue */}
           <div className="form-group">
-            <label className="form-label">예상 수익</label>
+            <label htmlFor="idea-potential-revenue" className="form-label">예상 수익</label>
             <input
+              id="idea-potential-revenue"
               type="text"
               value={formData.potentialRevenue}
               onChange={(e) => setFormData({ ...formData, potentialRevenue: e.target.value })}
@@ -559,8 +562,9 @@ export function IdeaForm() {
 
           {/* Resources */}
           <div className="form-group">
-            <label className="form-label">필요 자원</label>
+            <label htmlFor="idea-resources" className="form-label">필요 자원</label>
             <textarea
+              id="idea-resources"
               value={formData.resources}
               onChange={(e) => setFormData({ ...formData, resources: e.target.value })}
               rows={3}
@@ -642,8 +646,9 @@ export function IdeaForm() {
 
           {/* Notes */}
           <div className="form-group">
-            <label className="form-label">메모</label>
+            <label htmlFor="idea-notes" className="form-label">메모</label>
             <textarea
+              id="idea-notes"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={4}

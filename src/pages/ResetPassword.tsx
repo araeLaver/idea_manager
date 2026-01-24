@@ -209,13 +209,14 @@ export function ResetPassword() {
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">새 비밀번호</label>
+            <label htmlFor="reset-password" className="form-label">새 비밀번호</label>
             <div className="relative">
               <Lock
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
                 style={{ color: 'var(--text-tertiary)' }}
               />
               <input
+                id="reset-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -235,13 +236,14 @@ export function ResetPassword() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">비밀번호 확인</label>
+            <label htmlFor="reset-confirm-password" className="form-label">비밀번호 확인</label>
             <div className="relative">
               <Lock
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
                 style={{ color: 'var(--text-tertiary)' }}
               />
               <input
+                id="reset-confirm-password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

@@ -61,10 +61,51 @@ const validatePassword = (password: string): { valid: boolean; errors: string[] 
   };
 };
 
-// Email validation function
+// Email validation function with comprehensive checks
 const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email) && email.length <= 255;
+  // Length check
+  if (!email || email.length > 255 || email.length < 5) {
+    return false;
+  }
+
+  // More comprehensive email regex that validates:
+  // - Local part: alphanumeric, dots, hyphens, underscores, plus signs (no consecutive dots)
+  // - @ symbol
+  // - Domain: alphanumeric, dots, hyphens (no consecutive dots, valid TLD)
+  const emailRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9._+-]*[a-zA-Z0-9])?@[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return false;
+  }
+
+  // Additional checks
+  const [localPart, domain] = email.split('@');
+
+  // Check local part length (max 64 characters per RFC 5321)
+  if (localPart.length > 64) {
+    return false;
+  }
+
+  // Check for consecutive dots
+  if (email.includes('..')) {
+    return false;
+  }
+
+  // Check domain parts
+  const domainParts = domain.split('.');
+
+  // Ensure all domain parts are valid (1-63 characters each)
+  if (domainParts.some(part => part.length === 0 || part.length > 63)) {
+    return false;
+  }
+
+  // TLD must be at least 2 characters and only letters
+  const tld = domainParts[domainParts.length - 1];
+  if (tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) {
+    return false;
+  }
+
+  return true;
 };
 
 // Register

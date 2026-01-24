@@ -127,10 +127,11 @@ export function AIAssistant() {
                 
                 <div className="grid md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">
+                    <label htmlFor="ai-keyword" className="block text-sm font-medium text-secondary mb-2">
                       키워드 (선택사항)
                     </label>
                     <input
+                      id="ai-keyword"
                       type="text"
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -138,12 +139,13 @@ export function AIAssistant() {
                       className="w-full px-3 py-2 border border-primary rounded-lg text-sm"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">
+                    <label htmlFor="ai-category" className="block text-sm font-medium text-secondary mb-2">
                       카테고리 (선택사항)
                     </label>
                     <select
+                      id="ai-category"
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="w-full px-3 py-2 border border-primary rounded-lg text-sm"

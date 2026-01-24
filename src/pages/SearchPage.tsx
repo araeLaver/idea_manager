@@ -100,8 +100,8 @@ export function SearchPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="form-label">카테고리</label>
-            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+            <label htmlFor="search-category" className="form-label">카테고리</label>
+            <select id="search-category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
               <option value="">전체</option>
               {categories.map(category => (
                 <option key={category} value={category}>{category}</option>
@@ -109,8 +109,8 @@ export function SearchPage() {
             </select>
           </div>
           <div>
-            <label className="form-label">상태</label>
-            <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
+            <label htmlFor="search-status" className="form-label">상태</label>
+            <select id="search-status" value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
               <option value="">전체</option>
               {(Object.entries(STATUS_LABELS) as [IdeaStatus, string][]).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
@@ -118,8 +118,8 @@ export function SearchPage() {
             </select>
           </div>
           <div>
-            <label className="form-label">우선순위</label>
-            <select value={selectedPriority} onChange={(e) => setSelectedPriority(e.target.value)}>
+            <label htmlFor="search-priority" className="form-label">우선순위</label>
+            <select id="search-priority" value={selectedPriority} onChange={(e) => setSelectedPriority(e.target.value)}>
               <option value="">전체</option>
               {(Object.entries(PRIORITY_LABELS) as [IdeaPriority, string][]).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
