@@ -45,9 +45,9 @@ export const MockNotificationProvider = ({ children }: { children: ReactNode }) 
   </MockNotificationContext.Provider>
 );
 
-// Export mock hooks for use in vi.mock
-export const mockUseToast = () => useContext(MockToastContext);
-export const mockUseNotifications = () => useContext(MockNotificationContext);
+// Export mock hooks for use in vi.mock (named with "use" prefix for React Hook rules)
+export const useMockToast = () => useContext(MockToastContext);
+export const useMockNotifications = () => useContext(MockNotificationContext);
 
 // Mock AuthContext for testing
 export const mockAuthContext = {
