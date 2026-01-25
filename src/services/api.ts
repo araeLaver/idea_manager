@@ -29,6 +29,21 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes for stats cache (reduces API calls
 const REQUEST_TIMEOUT = 30 * 1000; // 30 seconds timeout for API requests
 
 /**
+ * Build URLSearchParams from an object, filtering out null/undefined values
+ */
+const buildQueryParams = <T extends object>(filters?: T): URLSearchParams => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  return params;
+};
+
+/**
  * Custom error class for API errors with status code and auth error detection
  */
 export class ApiError extends Error {
@@ -252,15 +267,7 @@ class ApiService {
 
   /** Get ideas with optional filters and pagination */
   async getIdeas(filters?: IdeaFilters): Promise<PaginatedResponse<Idea>> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-    }
-    const query = params.toString();
+    const query = buildQueryParams(filters).toString();
     return this.request<PaginatedResponse<Idea>>(`/ideas${query ? `?${query}` : ''}`);
   }
 
@@ -271,17 +278,11 @@ class ApiService {
     let hasMore = true;
 
     while (hasMore) {
-      const params = new URLSearchParams();
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value) params.append(key, String(value));
-        });
-      }
+      const params = buildQueryParams(filters);
       params.append('page', String(page));
       params.append('limit', String(MAX_ITEMS_PER_PAGE));
 
-      const query = params.toString();
-      const result = await this.request<PaginatedResponse<Idea>>(`/ideas?${query}`);
+      const result = await this.request<PaginatedResponse<Idea>>(`/ideas?${params.toString()}`);
 
       allIdeas.push(...result.data);
       hasMore = result.pagination.hasNext;

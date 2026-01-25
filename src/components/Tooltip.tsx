@@ -101,6 +101,7 @@ export function Tooltip({
       {isVisible && (
         <div
           ref={tooltipRef}
+          role="tooltip"
           style={{
             position: 'fixed',
             top: coords.top,
