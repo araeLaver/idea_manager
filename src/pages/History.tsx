@@ -151,8 +151,10 @@ export function History() {
       {/* Search & Filters */}
       <div className="grid md:grid-cols-4 gap-4 mb-6">
         <div className="md:col-span-2 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+          <label htmlFor="history-search" className="sr-only">히스토리 검색</label>
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
           <input
+            id="history-search"
             type="text"
             placeholder="아이디어 검색..."
             value={searchTerm}

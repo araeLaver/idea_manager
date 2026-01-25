@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -45,6 +45,10 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
   const navigate = useNavigate();
   const { toggleTheme } = useTheme();
   const { enabled = true, onNewIdea, onSearch, onToggleModal, onShowHelp, onExport } = options;
+
+  // Refs for cleanup of "G" key combo listener
+  const secondKeyListenerRef = useRef<((e: KeyboardEvent) => void) | null>(null);
+  const secondKeyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!enabled) return;
@@ -139,6 +143,14 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
 
     // G + 키: Gmail 스타일 네비게이션
     else if (!isCtrlOrCmd && event.key === 'g') {
+      // Clean up any existing listener before adding a new one
+      if (secondKeyListenerRef.current) {
+        document.removeEventListener('keydown', secondKeyListenerRef.current);
+      }
+      if (secondKeyTimeoutRef.current) {
+        clearTimeout(secondKeyTimeoutRef.current);
+      }
+
       const handleSecondKey = (secondEvent: KeyboardEvent) => {
         secondEvent.preventDefault();
         switch (secondEvent.key) {
@@ -162,13 +174,23 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
             break;
         }
         document.removeEventListener('keydown', handleSecondKey);
+        secondKeyListenerRef.current = null;
+        if (secondKeyTimeoutRef.current) {
+          clearTimeout(secondKeyTimeoutRef.current);
+          secondKeyTimeoutRef.current = null;
+        }
       };
 
+      secondKeyListenerRef.current = handleSecondKey;
       document.addEventListener('keydown', handleSecondKey);
 
       // 2초 후 이벤트 리스너 제거
-      setTimeout(() => {
-        document.removeEventListener('keydown', handleSecondKey);
+      secondKeyTimeoutRef.current = setTimeout(() => {
+        if (secondKeyListenerRef.current) {
+          document.removeEventListener('keydown', secondKeyListenerRef.current);
+          secondKeyListenerRef.current = null;
+        }
+        secondKeyTimeoutRef.current = null;
       }, 2000);
     }
   }, [enabled, navigate, toggleTheme, onNewIdea, onSearch, onToggleModal, onShowHelp, onExport]);
@@ -177,6 +199,15 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      // Clean up G key combo listener on unmount
+      if (secondKeyListenerRef.current) {
+        document.removeEventListener('keydown', secondKeyListenerRef.current);
+        secondKeyListenerRef.current = null;
+      }
+      if (secondKeyTimeoutRef.current) {
+        clearTimeout(secondKeyTimeoutRef.current);
+        secondKeyTimeoutRef.current = null;
+      }
     };
   }, [handleKeyDown]);
 }

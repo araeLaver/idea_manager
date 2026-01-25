@@ -20,13 +20,16 @@ export default tseslint.config([
       globals: globals.browser,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-empty-object-type': 'warn',
+      // TypeScript strict rules
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-empty-object-type': 'error',
+      // React rules
       'react-refresh/only-export-components': 'warn',
-      'react-hooks/exhaustive-deps': 'warn',
-      'no-case-declarations': 'warn',
-      'no-empty-pattern': 'warn',
+      'react-hooks/exhaustive-deps': 'error',
+      // General rules
+      'no-case-declarations': 'error',
+      'no-empty-pattern': 'error',
     },
   },
   // Disable react-refresh for contexts and test files

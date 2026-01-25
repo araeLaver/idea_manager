@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -51,7 +51,7 @@ export function IdeaList() {
     setDeleteTarget(null);
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -61,7 +61,7 @@ export function IdeaList() {
       }
       return next;
     });
-  };
+  }, []);
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredIdeas.length) {
@@ -95,12 +95,12 @@ export function IdeaList() {
     return idea.status === filter;
   }), [ideas, filter]);
 
-  const filterButtons = [
+  const filterButtons = useMemo(() => [
     { key: 'all', label: '전체', count: ideas.length },
     { key: 'draft', label: '초안', count: ideas.filter(i => i.status === 'draft').length },
     { key: 'in-progress', label: '진행중', count: ideas.filter(i => i.status === 'in-progress').length },
     { key: 'completed', label: '완료', count: ideas.filter(i => i.status === 'completed').length },
-  ];
+  ], [ideas]);
 
   if (loading) {
     return (

@@ -189,12 +189,23 @@ export function NotificationCenter() {
                 return (
                   <div
                     key={notification.id}
-                    className="flex items-start gap-3 p-4 transition-colors cursor-pointer"
+                    role="listitem"
+                    tabIndex={0}
+                    className="flex items-start gap-3 p-4 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset"
                     style={{
                       backgroundColor: notification.read ? 'transparent' : 'var(--bg-subtle)',
                       borderBottom: '1px solid var(--border-default)',
+                      // @ts-expect-error CSS custom property
+                      '--tw-ring-color': 'var(--color-primary-500)',
                     }}
                     onClick={() => handleNotificationClick(notification)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNotificationClick(notification);
+                      }
+                    }}
+                    aria-label={`${notification.title}: ${notification.message}`}
                   >
                     {/* Icon */}
                     <div

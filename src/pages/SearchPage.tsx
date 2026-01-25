@@ -86,16 +86,20 @@ export function SearchPage() {
       {/* Search & Filters */}
       <div className="card mb-6" style={{ padding: 'var(--space-6)' }}>
         <div className="mb-4">
+          <label htmlFor="idea-search" className="sr-only">아이디어 검색</label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
             <input
+              id="idea-search"
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="제목, 설명, 태그로 검색..."
               className="search-input"
+              aria-describedby="search-description"
             />
           </div>
+          <span id="search-description" className="sr-only">제목, 설명, 태그로 아이디어를 검색합니다</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

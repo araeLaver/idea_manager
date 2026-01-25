@@ -210,7 +210,7 @@ app.use(pinoHttp({
     return 'info';
   },
   // Custom success message
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   customSuccessMessage: (req, _res) => {
     return `${req.method} ${req.url} completed`;
   },
@@ -291,7 +291,7 @@ interface HttpError extends Error {
   status?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 app.use((err: HttpError, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error({ err, req: { method: req.method, url: req.url } }, 'Request error');
 
