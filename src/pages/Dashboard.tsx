@@ -13,7 +13,7 @@ import {
 import type { Idea, IdeaStatus } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { getStatusLabel, getStatusClass } from '../utils/labelMappings';
 import { SkeletonDashboard } from '../components/Skeleton';
 
@@ -25,7 +25,7 @@ interface StatsCardProps {
   gradient: string;
 }
 
-function StatsCard({ title, value, change, icon, gradient }: StatsCardProps) {
+const StatsCard = memo(function StatsCard({ title, value, change, icon, gradient }: StatsCardProps) {
   return (
     <div className="stats-card">
       <div className="flex items-start justify-between mb-4">
@@ -65,9 +65,9 @@ function StatsCard({ title, value, change, icon, gradient }: StatsCardProps) {
       </p>
     </div>
   );
-}
+});
 
-function RecentActivity({ ideas }: { ideas: Idea[] }) {
+const RecentActivity = memo(function RecentActivity({ ideas }: { ideas: Idea[] }) {
   const recentIdeas = useMemo(() =>
     [...ideas]
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
@@ -125,7 +125,7 @@ function RecentActivity({ ideas }: { ideas: Idea[] }) {
       )}
     </div>
   );
-}
+});
 
 function DailyMemo() {
   const [memo, setMemo] = useState('');

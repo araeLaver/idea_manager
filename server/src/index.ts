@@ -88,8 +88,18 @@ app.use(helmet({
   // X-Download-Options
   xDownloadOptions: true,
   // X-Permitted-Cross-Domain-Policies
-  xPermittedCrossDomainPolicies: { permittedPolicies: 'none' }
+  xPermittedCrossDomainPolicies: { permittedPolicies: 'none' },
+  // Origin-Agent-Cluster header for process isolation
+  originAgentCluster: true
 }));
+
+// Permissions-Policy header (not yet supported by helmet, add manually)
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()'
+  );
+  next();
+});
 
 // Rate limiting configuration (configurable via environment variables)
 const generalLimiter = rateLimit({

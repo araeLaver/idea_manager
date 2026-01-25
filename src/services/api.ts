@@ -26,6 +26,7 @@ interface CacheEntry<T> {
 }
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes for stats cache (reduces API calls)
+const IDEA_CACHE_TTL = 2 * 60 * 1000; // 2 minutes for individual ideas
 const REQUEST_TIMEOUT = 30 * 1000; // 30 seconds timeout for API requests
 
 /**
@@ -79,6 +80,8 @@ class ApiService {
   private legacyToken: string | null = null;
   // Simple cache for stats to reduce redundant API calls
   private statsCache: CacheEntry<Stats> | null = null;
+  // Cache for individual ideas (keyed by ID)
+  private ideaCache: Map<string, CacheEntry<Idea>> = new Map();
 
   constructor() {
     // SECURITY: Migrate legacy token from localStorage to memory-only
@@ -97,6 +100,12 @@ class ApiService {
   /** Clear all caches (call on logout or data mutation) */
   clearCache() {
     this.statsCache = null;
+    this.ideaCache.clear();
+  }
+
+  /** Invalidate cache for a specific idea */
+  private invalidateIdeaCache(id: string) {
+    this.ideaCache.delete(id);
   }
 
   /**
@@ -300,9 +309,23 @@ class ApiService {
     return allIdeas;
   }
 
-  /** Get a single idea by ID */
-  async getIdea(id: string): Promise<Idea> {
-    return this.request<Idea>(`/ideas/${id}`);
+  /** Get a single idea by ID (with caching) */
+  async getIdea(id: string, forceRefresh: boolean = false): Promise<Idea> {
+    const now = Date.now();
+    const cached = this.ideaCache.get(id);
+
+    // Return cached data if valid and not forcing refresh
+    if (!forceRefresh && cached && now - cached.timestamp < IDEA_CACHE_TTL) {
+      return cached.data;
+    }
+
+    // Fetch fresh data
+    const idea = await this.request<Idea>(`/ideas/${id}`);
+
+    // Update cache
+    this.ideaCache.set(id, { data: idea, timestamp: now });
+
+    return idea;
   }
 
   /** Create a new idea */
@@ -321,7 +344,8 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    this.clearCache(); // Invalidate stats cache
+    this.invalidateIdeaCache(id); // Invalidate specific idea cache
+    this.statsCache = null; // Invalidate stats cache (status may have changed)
     return result;
   }
 
@@ -330,7 +354,8 @@ class ApiService {
     const result = await this.request<MessageResponse>(`/ideas/${id}`, {
       method: 'DELETE',
     });
-    this.clearCache(); // Invalidate stats cache
+    this.invalidateIdeaCache(id); // Invalidate specific idea cache
+    this.statsCache = null; // Invalidate stats cache
     return result;
   }
 
@@ -365,7 +390,9 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify({ ids, status }),
     });
-    this.clearCache(); // Invalidate stats cache
+    // Invalidate caches for all affected ideas
+    ids.forEach(id => this.invalidateIdeaCache(id));
+    this.statsCache = null; // Invalidate stats cache
     return result;
   }
 

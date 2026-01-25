@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Calendar, Edit3, Save, Trash2, Plus, X } from 'lucide-react';
+import { Calendar, Edit3, Save, Trash2, Plus, X, AlertTriangle, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 import { guestStorage } from '../services/guestStorage';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,7 @@ export function DailyMemos() {
   const { showToast } = useToast();
   const [memos, setMemos] = useState<MemoEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editMemo, setEditMemo] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -27,6 +28,7 @@ export function DailyMemos() {
   const loadMemos = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
 
       if (isGuest) {
         // Load from guest storage
@@ -45,8 +47,8 @@ export function DailyMemos() {
           content: m.content
         })));
       }
-    } catch {
-      // Error loading memos - will show empty state
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '메모를 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -130,6 +132,24 @@ export function DailyMemos() {
         <div className="text-center">
           <div className="spinner mx-auto mb-4" />
           <p style={{ color: 'var(--text-secondary)' }}>메모를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center" style={{ height: '400px' }}>
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-error)' }} />
+          <p className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+            메모를 불러오지 못했습니다
+          </p>
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{error}</p>
+          <button onClick={loadMemos} className="btn btn-primary">
+            <RefreshCw className="w-4 h-4" />
+            다시 시도
+          </button>
         </div>
       </div>
     );

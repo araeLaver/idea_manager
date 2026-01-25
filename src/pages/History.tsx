@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
   History as HistoryIcon, Calendar, Clock, TrendingUp,
-  Search, Eye, Edit, Grid3X3, List, Tag
+  Search, Eye, Edit, Grid3X3, List, Tag, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,7 +15,7 @@ type SortBy = 'created' | 'updated' | 'title' | 'status' | 'priority';
 type FilterBy = 'all' | 'draft' | 'in-progress' | 'completed' | 'archived';
 
 export function History() {
-  const { ideas, loading } = useData();
+  const { ideas, loading, error, refreshIdeas } = useData();
   const { isGuest } = useAuth();
   const [sortBy, setSortBy] = useState<SortBy>('updated');
   const [filterBy, setFilterBy] = useState<FilterBy>('all');
@@ -74,6 +74,24 @@ export function History() {
         <div className="text-center">
           <div className="spinner mx-auto mb-4" />
           <p style={{ color: 'var(--text-secondary)' }}>히스토리를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center" style={{ height: '400px' }}>
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-error)' }} />
+          <p className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+            데이터를 불러오지 못했습니다
+          </p>
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{error}</p>
+          <button onClick={() => refreshIdeas()} className="btn btn-primary">
+            <RefreshCw className="w-4 h-4" />
+            다시 시도
+          </button>
         </div>
       </div>
     );

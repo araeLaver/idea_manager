@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -42,7 +42,7 @@ interface KanbanCardProps {
   onDelete: (id: string) => void;
 }
 
-function KanbanCard({ idea, onDelete }: KanbanCardProps) {
+const KanbanCard = memo(function KanbanCard({ idea, onDelete }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -125,7 +125,7 @@ function KanbanCard({ idea, onDelete }: KanbanCardProps) {
       </div>
     </div>
   );
-}
+});
 
 interface KanbanColumnProps {
   column: Column;
@@ -133,7 +133,7 @@ interface KanbanColumnProps {
   onDelete: (id: string) => void;
 }
 
-function KanbanColumn({ column, ideas, onDelete }: KanbanColumnProps) {
+const KanbanColumn = memo(function KanbanColumn({ column, ideas, onDelete }: KanbanColumnProps) {
   return (
     <div className="kanban-column">
       <div className="kanban-column-header">
@@ -172,7 +172,7 @@ function KanbanColumn({ column, ideas, onDelete }: KanbanColumnProps) {
       </SortableContextProvider>
     </div>
   );
-}
+});
 
 export function KanbanBoard() {
   const { ideas, loading, deleteIdea, updateIdea } = useData();
