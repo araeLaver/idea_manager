@@ -167,14 +167,14 @@ router.post('/register', async (req: Request, res: Response) => {
     // Set HttpOnly cookie
     setAuthCookie(res, token);
 
+    // SECURITY: Only return user info, token is in HttpOnly cookie
     res.status(201).json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         createdAt: user.created_at
-      },
-      token // Also return token for backward compatibility
+      }
     });
   } catch (error) {
     log.error({ error }, 'Register error');
@@ -225,14 +225,14 @@ router.post('/login', async (req: Request, res: Response) => {
     // Set HttpOnly cookie
     setAuthCookie(res, token);
 
+    // SECURITY: Only return user info, token is in HttpOnly cookie
     res.json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         createdAt: user.created_at
-      },
-      token // Also return token for backward compatibility
+      }
     });
   } catch (error) {
     log.error({ error }, 'Login error');
@@ -472,8 +472,32 @@ const isValidTokenFormat = (token: string): boolean => {
   return typeof token === 'string' && /^[a-f0-9]{64}$/i.test(token);
 };
 
-// Verify password reset token
+// Constant-time hash comparison to prevent timing attacks
+const constantTimeHashCompare = (a: string, b: string): boolean => {
+  if (a.length !== b.length) {
+    // Still do comparison to maintain constant time
+    crypto.timingSafeEqual(Buffer.from(a), Buffer.from(a));
+    return false;
+  }
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+};
+
+// Normalize response time to prevent timing attacks on token verification
+const MIN_RESPONSE_TIME_MS = 100;
+const normalizeResponseTime = async <T>(startTime: number, fn: () => Promise<T>): Promise<T> => {
+  const result = await fn();
+  const elapsed = Date.now() - startTime;
+  const remaining = MIN_RESPONSE_TIME_MS - elapsed;
+  if (remaining > 0) {
+    await new Promise(resolve => setTimeout(resolve, remaining));
+  }
+  return result;
+};
+
+// Verify password reset token (with timing attack protection)
 router.post('/password-reset/verify', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+
   try {
     const { token } = req.body;
 
@@ -488,13 +512,26 @@ router.post('/password-reset/verify', async (req: Request, res: Response) => {
 
     const tokenHash = hashToken(token);
 
-    const result = await query(
-      `SELECT user_id FROM idea_manager.password_reset_tokens
-       WHERE token_hash = $1 AND expires_at > NOW() AND used_at IS NULL`,
-      [tokenHash]
-    );
+    // Use normalized response time to prevent timing attacks
+    const isValid = await normalizeResponseTime(startTime, async () => {
+      // Fetch all non-expired, unused tokens and compare with constant-time
+      const result = await query(
+        `SELECT token_hash FROM idea_manager.password_reset_tokens
+         WHERE expires_at > NOW() AND used_at IS NULL
+         LIMIT 100`,
+        []
+      );
 
-    if (result.rows.length === 0) {
+      // Constant-time comparison against all valid tokens
+      for (const row of result.rows) {
+        if (constantTimeHashCompare(tokenHash, row.token_hash)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (!isValid) {
       return res.status(400).json({ error: 'Invalid or expired reset token' });
     }
 
@@ -507,6 +544,8 @@ router.post('/password-reset/verify', async (req: Request, res: Response) => {
 
 // Reset password with token
 router.post('/password-reset/confirm', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+
   try {
     const { token, newPassword } = req.body;
 
@@ -530,18 +569,30 @@ router.post('/password-reset/confirm', async (req: Request, res: Response) => {
 
     const tokenHash = hashToken(token);
 
-    // Find valid token
-    const tokenResult = await query(
-      `SELECT id, user_id FROM idea_manager.password_reset_tokens
-       WHERE token_hash = $1 AND expires_at > NOW() AND used_at IS NULL`,
-      [tokenHash]
-    );
+    // Use normalized response time and constant-time comparison to prevent timing attacks
+    const tokenData = await normalizeResponseTime(startTime, async () => {
+      // Fetch all non-expired, unused tokens and compare with constant-time
+      const result = await query(
+        `SELECT id, user_id, token_hash FROM idea_manager.password_reset_tokens
+         WHERE expires_at > NOW() AND used_at IS NULL
+         LIMIT 100`,
+        []
+      );
 
-    if (tokenResult.rows.length === 0) {
+      // Constant-time comparison against all valid tokens
+      for (const row of result.rows) {
+        if (constantTimeHashCompare(tokenHash, row.token_hash)) {
+          return { id: row.id, userId: row.user_id };
+        }
+      }
+      return null;
+    });
+
+    if (!tokenData) {
       return res.status(400).json({ error: 'Invalid or expired reset token' });
     }
 
-    const { id: tokenId, user_id: userId } = tokenResult.rows[0];
+    const { id: tokenId, userId } = tokenData;
 
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, 10);

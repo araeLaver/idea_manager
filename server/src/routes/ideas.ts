@@ -267,7 +267,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Create idea
+// Create idea with transaction (ensures history is recorded atomically)
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const {
@@ -297,44 +297,50 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: validation.error });
     }
 
-    const result = await query(
-      `INSERT INTO idea_manager.ideas (
-        user_id, title, description, category, tags, status, priority,
-        notes, target_market, potential_revenue, resources, timeline,
-        deadline, reminder_enabled, reminder_days
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      RETURNING *`,
-      [
-        req.userId,
-        title,
-        description || '',
-        category || '',
-        tags || [],
-        status || 'draft',
-        priority || 'medium',
-        notes || '',
-        targetMarket || '',
-        potentialRevenue || '',
-        resources || '',
-        timeline || '',
-        deadline || null,
-        reminderEnabled || false,
-        reminderDays || 3
-      ]
-    );
+    const newIdea = await withTransaction(async (client) => {
+      const result = await txQuery(
+        client,
+        `INSERT INTO idea_manager.ideas (
+          user_id, title, description, category, tags, status, priority,
+          notes, target_market, potential_revenue, resources, timeline,
+          deadline, reminder_enabled, reminder_days
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING *`,
+        [
+          req.userId,
+          title,
+          description || '',
+          category || '',
+          tags || [],
+          status || 'draft',
+          priority || 'medium',
+          notes || '',
+          targetMarket || '',
+          potentialRevenue || '',
+          resources || '',
+          timeline || '',
+          deadline || null,
+          reminderEnabled || false,
+          reminderDays || 3
+        ]
+      );
 
-    const row = result.rows[0];
+      const row = result.rows[0];
 
-    // Record history
-    await query(
-      `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, new_values)
-       VALUES ($1, $2, 'created', $3)`,
-      [row.id, req.userId, createHistoryJson({ title, status: status || 'draft' })]
-    );
+      // Record history within same transaction
+      await txQuery(
+        client,
+        `INSERT INTO idea_manager.idea_history (idea_id, user_id, action, new_values)
+         VALUES ($1, $2, 'created', $3)`,
+        [row.id, req.userId, createHistoryJson({ title, status: status || 'draft' })]
+      );
 
-    res.status(201).json(mapRowToIdea(row));
+      return mapRowToIdea(row);
+    });
+
+    res.status(201).json(newIdea);
   } catch (error) {
-    log.error({ error }, 'Create idea error');
+    log.error({ error, userId: req.userId }, 'Create idea error');
     res.status(500).json({ error: 'Failed to create idea' });
   }
 });
