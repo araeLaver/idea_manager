@@ -243,6 +243,7 @@ export const initDatabase = async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_ideas_category ON idea_manager.ideas(category)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_ideas_priority ON idea_manager.ideas(priority)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_ideas_created_at ON idea_manager.ideas(created_at DESC)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ideas_updated_at ON idea_manager.ideas(updated_at DESC)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_ideas_tags ON idea_manager.ideas USING GIN(tags)`);
 
     // Composite indexes for common query patterns
@@ -254,10 +255,24 @@ export const initDatabase = async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_daily_memos_user_date ON idea_manager.daily_memos(user_id, date)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_idea_history_idea_id ON idea_manager.idea_history(idea_id)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_idea_history_user_id ON idea_manager.idea_history(user_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_idea_history_changed_at ON idea_manager.idea_history(changed_at DESC)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_token_blacklist_token_hash ON idea_manager.token_blacklist(token_hash)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_token_blacklist_expires_at ON idea_manager.token_blacklist(expires_at)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token_hash ON idea_manager.password_reset_tokens(token_hash)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON idea_manager.password_reset_tokens(user_id)`);
+
+    // Try to create pg_trgm extension for better ILIKE search performance
+    // This is optional - will gracefully skip if extension is not available
+    try {
+      await query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+      // Trigram indexes for faster ILIKE searches on title and description
+      await query(`CREATE INDEX IF NOT EXISTS idx_ideas_title_trgm ON idea_manager.ideas USING GIN(title gin_trgm_ops)`);
+      await query(`CREATE INDEX IF NOT EXISTS idx_ideas_description_trgm ON idea_manager.ideas USING GIN(description gin_trgm_ops)`);
+      logger.info('pg_trgm extension and trigram indexes created for improved search performance');
+    } catch {
+      // pg_trgm extension not available - search will still work but may be slower for large datasets
+      logger.debug('pg_trgm extension not available - skipping trigram indexes');
+    }
 
     // Create update timestamp trigger function
     await query(`
